@@ -7,8 +7,11 @@ import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { Overview } from './components/Overview';
 import { EdgeCaseExplorer } from './components/EdgeCaseExplorer';
+import { DatasetFusionEngine } from './components/DatasetFusionEngine';
 import { GatiShaktiMapHub } from './components/GatiShaktiMapHub';
 import { FeedbackSimulator } from './components/FeedbackSimulator';
+import { DpiImpactTracker } from './components/DpiImpactTracker';
+import { PolicymakerDossier } from './components/PolicymakerDossier';
 import { DeepResearchStudio } from './components/DeepResearchStudio';
 import { DocxStudio } from './components/DocxStudio';
 import { generateSamvaadSetuDocx } from './utils/docxExport';
@@ -75,9 +78,17 @@ export default function App() {
 
         {activeTab === 'edge-cases' && <EdgeCaseExplorer />}
 
+        {activeTab === 'fusion' && <DatasetFusionEngine />}
+
         {activeTab === 'gatishakti' && <GatiShaktiMapHub />}
 
         {activeTab === 'simulator' && <FeedbackSimulator />}
+
+        {activeTab === 'impact' && <DpiImpactTracker />}
+
+        {activeTab === 'policymakers' && (
+          <PolicymakerDossier onExportDocx={handleQuickExportDocx} />
+        )}
 
         {activeTab === 'research' && (
           <DeepResearchStudio onExportDocx={handleQuickExportDocx} />

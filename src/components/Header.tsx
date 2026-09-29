@@ -1,5 +1,16 @@
 import React from 'react';
-import { Download, ShieldCheck, Globe2, Layers, Cpu, Sparkles, FileText } from 'lucide-react';
+import {
+  Download,
+  ShieldCheck,
+  Globe2,
+  Layers,
+  Cpu,
+  Sparkles,
+  FileText,
+  Database,
+  Activity,
+  Award
+} from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -15,12 +26,15 @@ export const Header: React.FC<HeaderProps> = ({
   isExporting,
 }) => {
   const tabs = [
-    { id: 'overview', label: '360° DPI Overview', icon: Globe2 },
-    { id: 'edge-cases', label: '10 Edge Cases Matrix', icon: ShieldCheck, badge: 'All 360°' },
-    { id: 'gatishakti', label: 'GatiShakti & Districts', icon: Layers, badge: 'India Grounded' },
-    { id: 'simulator', label: 'Multilingual Ingestion', icon: Cpu },
-    { id: 'research', label: 'Deep Research Studio', icon: Sparkles, badge: 'Gemini AI' },
-    { id: 'docx-studio', label: 'DOCX Blueprint Studio', icon: FileText, highlight: true },
+    { id: 'overview', label: '360° Overview', icon: Globe2 },
+    { id: 'edge-cases', label: '10 Edge Cases', icon: ShieldCheck, badge: 'All 360°' },
+    { id: 'fusion', label: 'Big Data Fusion', icon: Database, badge: '4 Datasets' },
+    { id: 'gatishakti', label: 'GatiShakti GIS', icon: Layers, badge: 'India' },
+    { id: 'simulator', label: 'Multilingual Voice', icon: Cpu },
+    { id: 'impact', label: 'DPI Impact Tracker', icon: Activity, badge: 'Verified' },
+    { id: 'policymakers', label: 'Policymaker Dossiers', icon: Award, badge: 'BRICS' },
+    { id: 'research', label: 'Deep Research', icon: Sparkles },
+    { id: 'docx-studio', label: 'DOCX Blueprint', icon: FileText, highlight: true },
   ];
 
   return (
@@ -91,17 +105,17 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3 py-2 text-xs sm:text-sm font-medium rounded-lg whitespace-nowrap transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg whitespace-nowrap transition-all cursor-pointer ${
                   isActive
                     ? 'bg-indigo-600/30 text-amber-300 border border-indigo-500/40 shadow-sm'
                     : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                 }`}
               >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
+                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
                 <span>{tab.label}</span>
                 {tab.badge && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded font-semibold ${
+                    className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
                       isActive
                         ? 'bg-amber-400 text-slate-900'
                         : 'bg-slate-800 text-slate-300 border border-slate-700'

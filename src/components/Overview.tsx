@@ -68,11 +68,24 @@ export const Overview: React.FC<OverviewProps> = ({ onNavigateToTab, onExportDoc
             </button>
 
             <button
-              onClick={() => onNavigateToTab('simulator')}
+              onClick={() => onNavigateToTab('fusion')}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-cyan-950/60 hover:bg-cyan-900/80 text-cyan-200 border border-cyan-700/60 transition-all cursor-pointer"
+            >
+              <span>Big Data Fusion (4 Datasets)</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateToTab('impact')}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-200 border border-emerald-700/60 transition-all cursor-pointer"
+            >
+              <span>DPI Impact Measurement</span>
+            </button>
+
+            <button
+              onClick={() => onNavigateToTab('policymakers')}
               className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm bg-indigo-900/60 hover:bg-indigo-800/80 text-indigo-200 border border-indigo-700/60 transition-all cursor-pointer"
             >
-              <Volume2 className="w-4 h-4 text-indigo-400" />
-              Test Multilingual Voice Ingestion
+              <span>BRICS Policymaker Dossiers</span>
             </button>
           </div>
         </div>

@@ -15,12 +15,16 @@ import {
 import { saveAs } from 'file-saver';
 import { EDGE_CASES_DATA } from '../data/edgeCases';
 import { DISTRICT_HOTSPOTS, BRICS_PARTNER_DATA } from '../data/nationalData';
+import { MISALIGNMENT_DATA, DPI_IMPACT_METRICS, POLICYMAKER_DOSSIERS } from '../data/fusionData';
 
 export interface DocxOptions {
   includeEdgeCases?: boolean;
   includeBricsBlueprint?: boolean;
   includeMathFormulation?: boolean;
   includeGatiShaktiDetails?: boolean;
+  includeMisalignmentData?: boolean;
+  includeDpiImpactMetrics?: boolean;
+  includePolicymakerDossiers?: boolean;
   customAuthor?: string;
   customTargetNation?: string;
 }
@@ -31,6 +35,9 @@ export async function generateSamvaadSetuDocx(options: DocxOptions = {}) {
     includeBricsBlueprint = true,
     includeMathFormulation = true,
     includeGatiShaktiDetails = true,
+    includeMisalignmentData = true,
+    includeDpiImpactMetrics = true,
+    includePolicymakerDossiers = true,
     customAuthor = 'BRICS Digital Public Infrastructure & Governance Taskforce',
     customTargetNation = 'India & BRICS Member Nations'
   } = options;
@@ -600,6 +607,264 @@ export async function generateSamvaadSetuDocx(options: DocxOptions = {}) {
     })
   );
 
+  // Section 7: Misalignment & Fiscal Realignment
+  if (includeMisalignmentData) {
+    sections.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 300, after: 150 },
+        children: [
+          new TextRun({
+            text: '7. Big Data 4-Way Fusion & Solving Public Spending Misalignment',
+            bold: true,
+            color: primaryNavy,
+          }),
+        ],
+      }),
+      new Paragraph({
+        spacing: { after: 150 },
+        children: [
+          new TextRun({
+            text: 'A core pathology in national infrastructure planning is "Fiscal Drift"—where public capex is disproportionately captured by influential contractors and urban centers while high-distress rural and tribal deficits remain invisible. By fusing (1) Citizen Feedback Streams, (2) National Demographics, (3) Infrastructure Indices, and (4) Public Investment Plans, SAMVAAD-SETU 360° identifies and corrects misallocated funds across major sectors:',
+            size: 22,
+          }),
+        ],
+      })
+    );
+
+    const misRowCells = [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 20, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'Infrastructure Sector', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'Status Quo Top-Down Allocation', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'Citizen-Demanded Real Need', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+          new TableCell({
+            width: { size: 30, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'Samvaad-Setu Realignment Solution', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+        ],
+      }),
+    ];
+
+    for (const m of MISALIGNMENT_DATA) {
+      misRowCells.push(
+        new TableRow({
+          children: [
+            new TableCell({
+              children: [
+                new Paragraph({ children: [new TextRun({ text: m.sector, bold: true })] }),
+                new Paragraph({ children: [new TextRun({ text: `Variance: ${m.misalignmentVariance}`, size: 16, color: 'B91C1C', bold: true })] }),
+              ],
+              borders: defaultBorder,
+            }),
+            new TableCell({
+              children: [new Paragraph({ children: [new TextRun({ text: m.traditionalTopDownAllocation, size: 18 })] })],
+              borders: defaultBorder,
+            }),
+            new TableCell({
+              children: [new Paragraph({ children: [new TextRun({ text: m.groundedCitizenDemandNeed, size: 18 })] })],
+              borders: defaultBorder,
+            }),
+            new TableCell({
+              children: [new Paragraph({ children: [new TextRun({ text: m.samvaadSetuRealignmentSolution, size: 18, color: '065F46' })] })],
+              borders: defaultBorder,
+            }),
+          ],
+        })
+      );
+    }
+
+    sections.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: misRowCells }));
+  }
+
+  // Section 8: DPI Impact Measurement Framework
+  if (includeDpiImpactMetrics) {
+    sections.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 300, after: 150 },
+        children: [
+          new TextRun({
+            text: '8. Measuring the Impact of Large-Scale Digital Public Infrastructure',
+            bold: true,
+            color: primaryNavy,
+          }),
+        ],
+      }),
+      new Paragraph({
+        spacing: { after: 150 },
+        children: [
+          new TextRun({
+            text: 'Historically, governments have had no rigorous methodology to measure whether multi-billion dollar digital and physical public infrastructure programs delivered real welfare outcomes. SAMVAAD-SETU 360° institutes an empirical measurement framework comparing pre-DPI baselines with post-commissioning verified outcomes:',
+            size: 22,
+          }),
+        ],
+      })
+    );
+
+    const impactRows = [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'DPI Impact Indicator', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'Pre-DPI Status Quo Baseline', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'Post-DPI Verified Ground Outcome', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+          new TableCell({
+            width: { size: 25, type: WidthType.PERCENTAGE },
+            shading: { type: ShadingType.CLEAR, fill: primaryNavy },
+            children: [new Paragraph({ children: [new TextRun({ text: 'Delta & Verification Method', bold: true, color: white })] })],
+            borders: defaultBorder,
+          }),
+        ],
+      }),
+    ];
+
+    for (const imp of DPI_IMPACT_METRICS) {
+      impactRows.push(
+        new TableRow({
+          children: [
+            new TableCell({
+              children: [
+                new Paragraph({ children: [new TextRun({ text: imp.indicator, bold: true })] }),
+                new Paragraph({ children: [new TextRun({ text: imp.deltaImprovement, size: 16, color: '065F46', bold: true })] }),
+              ],
+              borders: defaultBorder,
+            }),
+            new TableCell({
+              children: [new Paragraph({ children: [new TextRun({ text: imp.preDpiBaseline, size: 18 })] })],
+              borders: defaultBorder,
+            }),
+            new TableCell({
+              children: [new Paragraph({ children: [new TextRun({ text: imp.postDpiGroundedOutcome, size: 18 })] })],
+              borders: defaultBorder,
+            }),
+            new TableCell({
+              children: [new Paragraph({ children: [new TextRun({ text: imp.verificationMethod, size: 16, italics: true })] })],
+              borders: defaultBorder,
+            }),
+          ],
+        })
+      );
+    }
+
+    sections.push(new Table({ width: { size: 100, type: WidthType.PERCENTAGE }, rows: impactRows }));
+  }
+
+  // Section 9: Bankable Policymaker Dossiers across BRICS
+  if (includePolicymakerDossiers) {
+    sections.push(
+      new Paragraph({
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 300, after: 150 },
+        children: [
+          new TextRun({
+            text: '9. Bankable High-Priority Project Dossiers for BRICS National Policymakers',
+            bold: true,
+            color: primaryNavy,
+          }),
+        ],
+      }),
+      new Paragraph({
+        spacing: { after: 150 },
+        children: [
+          new TextRun({
+            text: 'Synthesized directly from citizen demand signals, demographic vulnerability indices, and geospatial masterplans, the following pre-appraised capital project dossiers are ready for immediate co-financing by national exchequers and the BRICS New Development Bank (NDB):',
+            size: 22,
+          }),
+        ],
+      })
+    );
+
+    for (const dossier of POLICYMAKER_DOSSIERS) {
+      sections.push(
+        new Paragraph({
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 180, after: 60 },
+          children: [
+            new TextRun({
+              text: `${dossier.countryFlag} [${dossier.country}] ${dossier.projectName}`,
+              bold: true,
+              color: primaryNavy,
+              size: 22,
+            }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { after: 60 },
+          children: [
+            new TextRun({ text: 'Corridor: ', bold: true, size: 18 }),
+            new TextRun({ text: `${dossier.corridor} | `, size: 18 }),
+            new TextRun({ text: 'Estimated Capex: ', bold: true, size: 18 }),
+            new TextRun({ text: `${dossier.capexUsd} (${dossier.capexInr}) | `, color: '065F46', bold: true, size: 18 }),
+            new TextRun({ text: 'Economic IRR: ', bold: true, size: 18 }),
+            new TextRun({ text: dossier.economicInternalRateOfReturn, size: 18, color: saffronOrange, bold: true }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { after: 60 },
+          children: [
+            new TextRun({ text: 'Citizen Signals: ', bold: true, size: 18 }),
+            new TextRun({ text: `${dossier.demandHeatmapSignals.toLocaleString()} verified voice/text requests | `, size: 18 }),
+            new TextRun({ text: 'Beneficiaries: ', bold: true, size: 18 }),
+            new TextRun({ text: dossier.beneficiaries, size: 18 }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { after: 60 },
+          children: [
+            new TextRun({ text: 'Grassroots Deficit: ', bold: true, color: 'B91C1C', size: 18 }),
+            new TextRun({ text: dossier.summaryProblem, size: 18 }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { after: 60 },
+          children: [
+            new TextRun({ text: 'Grounded DPI Solution: ', bold: true, color: '065F46', size: 18 }),
+            new TextRun({ text: dossier.groundedIntervention, size: 18 }),
+          ],
+        }),
+        new Paragraph({
+          spacing: { after: 120 },
+          children: [
+            new TextRun({ text: 'NDB Blended Financing Alignment: ', bold: true, color: accentTeal, size: 18 }),
+            new TextRun({ text: dossier.bricsNdbAlignment, size: 18, italics: true }),
+          ],
+        })
+      );
+    }
+  }
+
   // Conclusion & Implementation Roadmap
   sections.push(
     new Paragraph({
@@ -607,7 +872,7 @@ export async function generateSamvaadSetuDocx(options: DocxOptions = {}) {
       spacing: { before: 300, after: 150 },
       children: [
         new TextRun({
-          text: '7. 3-Year Pan-BRICS Implementation Roadmap',
+          text: '10. 3-Year Pan-BRICS Implementation Roadmap',
           bold: true,
           color: primaryNavy,
         }),

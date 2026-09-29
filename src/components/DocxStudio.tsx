@@ -23,6 +23,9 @@ export const DocxStudio: React.FC = () => {
     includeBricsBlueprint: true,
     includeMathFormulation: true,
     includeGatiShaktiDetails: true,
+    includeMisalignmentData: true,
+    includeDpiImpactMetrics: true,
+    includePolicymakerDossiers: true,
     customAuthor: 'BRICS Track 1 DPI & Governance AI Taskforce',
     customTargetNation: 'India & BRICS Member Nations (Brazil, South Africa, Russia, China, Egypt)',
   });
@@ -167,6 +170,42 @@ export const DocxStudio: React.FC = () => {
                   className="w-4 h-4 accent-amber-500 rounded"
                 />
               </label>
+
+              <label className="flex items-center justify-between p-3 rounded-xl bg-slate-800/40 border border-slate-800 cursor-pointer hover:bg-slate-800/70">
+                <span className="text-xs text-slate-200 font-medium">
+                  Big Data 4-Way Fusion & Fiscal Misalignment Calculator
+                </span>
+                <input
+                  type="checkbox"
+                  checked={options.includeMisalignmentData}
+                  onChange={(e) => setOptions({ ...options, includeMisalignmentData: e.target.checked })}
+                  className="w-4 h-4 accent-amber-500 rounded"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 rounded-xl bg-slate-800/40 border border-slate-800 cursor-pointer hover:bg-slate-800/70">
+                <span className="text-xs text-slate-200 font-medium">
+                  DPI Impact Measurement & Closed-Loop Verification
+                </span>
+                <input
+                  type="checkbox"
+                  checked={options.includeDpiImpactMetrics}
+                  onChange={(e) => setOptions({ ...options, includeDpiImpactMetrics: e.target.checked })}
+                  className="w-4 h-4 accent-amber-500 rounded"
+                />
+              </label>
+
+              <label className="flex items-center justify-between p-3 rounded-xl bg-slate-800/40 border border-slate-800 cursor-pointer hover:bg-slate-800/70">
+                <span className="text-xs text-slate-200 font-medium">
+                  Bankable High-Priority Project Dossiers for BRICS
+                </span>
+                <input
+                  type="checkbox"
+                  checked={options.includePolicymakerDossiers}
+                  onChange={(e) => setOptions({ ...options, includePolicymakerDossiers: e.target.checked })}
+                  className="w-4 h-4 accent-amber-500 rounded"
+                />
+              </label>
             </div>
           </div>
         </div>
@@ -251,8 +290,44 @@ export const DocxStudio: React.FC = () => {
                 </div>
               )}
 
+              {options.includeMisalignmentData && (
+                <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60 flex items-start gap-3">
+                  <span className="font-mono text-amber-400 font-bold">07</span>
+                  <div>
+                    <div className="font-bold text-white text-sm">Big Data 4-Way Fusion & Solving Public Spending Misalignment</div>
+                    <div className="text-slate-400 mt-0.5">
+                      Quantifying the ₹61,500 Cr fiscal drift; cross-correlation of citizen feedback, demographic vulnerability, and capex budgets.
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {options.includeDpiImpactMetrics && (
+                <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60 flex items-start gap-3">
+                  <span className="font-mono text-amber-400 font-bold">08</span>
+                  <div>
+                    <div className="font-bold text-white text-sm">Measuring the Impact of Large-Scale Digital Public Infrastructure</div>
+                    <div className="text-slate-400 mt-0.5">
+                      Empirical before/after metrics (+5.8x alignment precision, 99.9% hazard latency drop, +68% net trust surge) and Closed-Loop Proof of Completion (CL-PoC).
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {options.includePolicymakerDossiers && (
+                <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60 flex items-start gap-3">
+                  <span className="font-mono text-amber-400 font-bold">09</span>
+                  <div>
+                    <div className="font-bold text-white text-sm">Bankable High-Priority Project Dossiers for BRICS National Policymakers</div>
+                    <div className="text-slate-400 mt-0.5">
+                      Pre-appraised capital project dossiers for India, Brazil, South Africa, Russia, and Egypt with Capex, EIRR, and NDB blended-finance windows.
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <div className="p-3.5 rounded-xl bg-slate-800/40 border border-slate-700/60 flex items-start gap-3">
-                <span className="font-mono text-amber-400 font-bold">07</span>
+                <span className="font-mono text-amber-400 font-bold">10</span>
                 <div>
                   <div className="font-bold text-white text-sm">DPDP Act 2023 Compliance & 3-Year Implementation Roadmap</div>
                   <div className="text-slate-400 mt-0.5">
