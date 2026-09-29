@@ -52,10 +52,18 @@ export const Overview: React.FC<OverviewProps> = ({ onNavigateToTab, onExportDoc
           {/* Quick CTA Buttons */}
           <div className="pt-4 flex flex-wrap items-center gap-3">
             <button
-              onClick={onExportDocx}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-lg hover:shadow-amber-500/25 active:scale-95 transition-all cursor-pointer"
+              onClick={() => onNavigateToTab('prototype')}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-sm bg-gradient-to-r from-amber-500 via-amber-600 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 shadow-lg hover:shadow-amber-500/25 active:scale-95 transition-all cursor-pointer"
             >
-              <FileText className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-slate-950" />
+              Launch Live Resolution Prototype (Solve Now)
+            </button>
+
+            <button
+              onClick={onExportDocx}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-bold text-sm bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-all cursor-pointer"
+            >
+              <FileText className="w-4 h-4 text-amber-400" />
               Download Official 360° DOCX Blueprint
             </button>
 

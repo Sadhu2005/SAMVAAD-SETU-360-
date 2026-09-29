@@ -26,6 +26,7 @@ export const Header: React.FC<HeaderProps> = ({
   isExporting,
 }) => {
   const tabs = [
+    { id: 'prototype', label: '🚀 Live Prototype (Solve Now)', icon: Sparkles, badge: 'Interactive' },
     { id: 'overview', label: '360° Overview', icon: Globe2 },
     { id: 'edge-cases', label: '10 Edge Cases', icon: ShieldCheck, badge: 'All 360°' },
     { id: 'fusion', label: 'Big Data Fusion', icon: Database, badge: '4 Datasets' },

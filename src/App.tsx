@@ -5,6 +5,7 @@
 
 import React, { useState } from 'react';
 import { Header } from './components/Header';
+import { LiveResolutionPrototype } from './components/LiveResolutionPrototype';
 import { Overview } from './components/Overview';
 import { EdgeCaseExplorer } from './components/EdgeCaseExplorer';
 import { DatasetFusionEngine } from './components/DatasetFusionEngine';
@@ -27,7 +28,7 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>('overview');
+  const [activeTab, setActiveTab] = useState<string>('prototype');
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
 
@@ -69,6 +70,10 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {activeTab === 'prototype' && (
+          <LiveResolutionPrototype onExportDocx={handleQuickExportDocx} />
+        )}
+
         {activeTab === 'overview' && (
           <Overview
             onNavigateToTab={(tab) => setActiveTab(tab)}
