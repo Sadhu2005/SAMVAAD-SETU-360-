@@ -1,0 +1,6 @@
+{
+  "name": "SamvaadSetu 360 - BRICS DPI AI Platform",
+  "description": "360-degree multilingual AI platform for citizen feedback aggregation, edge case reconciliation, and national infrastructure planning grounded in India and scalable across BRICS nations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
