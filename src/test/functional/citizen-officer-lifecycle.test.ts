@@ -38,6 +38,15 @@ describe('Functional Test: End-to-End Citizen & Officer Operational Lifecycle', 
     expect(assignedCase.status).toBe('assigned');
     expect(assignedCase.assignedDept).toBe('State PWD (Bridges & Roads)');
 
+    const inProgress = await updateCaseByOfficer({
+      trackingId: citizenCase.trackingId,
+      status: 'in_progress',
+      officerName: 'Er. Alok Sharma',
+      officerRole: 'nodal_engineer',
+      remarks: 'Work started on site.',
+    });
+    expect(inProgress.status).toBe('in_progress');
+
     // 3. Engineer completes work and uploads photographic proof
     const completedCase = await updateCaseByOfficer({
       trackingId: citizenCase.trackingId,
@@ -74,5 +83,14 @@ describe('Functional Test: End-to-End Citizen & Officer Operational Lifecycle', 
     expect(verifiedCase.status).toBe('citizen_verified');
     expect(verifiedCase.citizenFeedback?.verified).toBe(true);
     expect(verifiedCase.citizenFeedback?.satisfactionRating).toBe(5);
+
+    const closed = await updateCaseByOfficer({
+      trackingId: citizenCase.trackingId,
+      status: 'closed',
+      officerName: 'District Magistrate',
+      officerRole: 'district_admin',
+      remarks: 'Closed after citizen verification.',
+    });
+    expect(closed.status).toBe('closed');
   });
 });

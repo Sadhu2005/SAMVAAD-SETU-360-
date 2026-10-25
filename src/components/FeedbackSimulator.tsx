@@ -12,7 +12,6 @@ import {
   AlertTriangle,
   Play,
   RotateCcw,
-  Sparkles,
   Send
 } from 'lucide-react';
 import { SAMPLE_FEEDBACK_SIMULATIONS, CitizenFeedbackSimulation } from '../data/nationalData';
@@ -68,15 +67,15 @@ export const FeedbackSimulator: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Banner */}
-      <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-2xl border border-slate-800 shadow-xl space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+      <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gov-teal-soft text-gov-teal border border-gov-teal">
           <Cpu className="w-3.5 h-3.5" />
           Multilingual Ingestion & Bhashini ASR Pipeline
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
           Test Citizen Feedback Ingestion in Real Indian Vernaculars
         </h2>
-        <p className="text-sm text-slate-300 max-w-4xl leading-relaxed">
+        <p className="text-sm text-gov-muted max-w-4xl leading-relaxed">
           Experience how <strong>Samvaad-Setu 360°</strong> receives unstructured voice notes, toll-free calls, and SMS in 
           languages like Bhojpuri, Tamil, Bengali, and Marathi, filters background noise, translates into canonical text via 
           <strong>Bhashini</strong>, and instantly triangulates with <strong>PM GatiShakti</strong>.
@@ -88,14 +87,14 @@ export const FeedbackSimulator: React.FC = () => {
             <button
               key={sample.id}
               onClick={() => handleSelectSample(sample)}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
+              className={`px-3 py-2 rounded-sm text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
                 selectedSim.id === sample.id
-                  ? 'bg-indigo-600 text-white shadow-md'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-gov-navy text-gov-text shadow-md'
+                  : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
               }`}
             >
               <span>{sample.language}</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-900 text-amber-400">
+              <span className="text-[10px] px-1.5 py-0.2 rounded bg-gov-card text-gov-teal">
                 {sample.sourceChannel.split(' ')[0]}
               </span>
             </button>
@@ -107,55 +106,55 @@ export const FeedbackSimulator: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column: Citizen Ingestion Interface */}
         <div className="lg:col-span-5 space-y-4">
-          <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="bg-gov-card p-6 rounded-sm border border-gov-border  space-y-4">
+            <div className="flex items-center justify-between border-b border-gov-border pb-3">
+              <span className="text-xs font-bold text-gov-teal uppercase tracking-wider flex items-center gap-1.5">
                 <MessageSquare className="w-4 h-4" />
                 Citizen Ingestion Point
               </span>
-              <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-medium bg-slate-800 text-slate-300">
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-mono font-medium bg-gov-inset text-gov-muted">
                 {selectedSim.sourceChannel}
               </span>
             </div>
 
             {/* Citizen Profile & Geotag */}
-            <div className="bg-slate-800/40 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
-              <div className="text-slate-400">
-                Citizen: <strong className="text-white">{selectedSim.citizenName}</strong>
+            <div className="bg-gov-inset p-3 rounded-sm border border-gov-border text-xs space-y-1">
+              <div className="text-gov-muted">
+                Citizen: <strong className="text-gov-text">{selectedSim.citizenName}</strong>
               </div>
-              <div className="text-slate-400">
-                Location: <strong className="text-amber-300">{selectedSim.location}</strong>
+              <div className="text-gov-muted">
+                Location: <strong className="text-gov-teal">{selectedSim.location}</strong>
               </div>
             </div>
 
             {/* Raw Vernacular Audio/Text Display */}
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2">
-              <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <div className="bg-gov-inset p-4 rounded-sm border border-gov-border space-y-2">
+              <div className="flex items-center justify-between text-[11px] text-gov-muted font-mono">
                 <span>Raw Vernacular Speech ({selectedSim.language})</span>
-                <span className="text-emerald-400 font-semibold">Bhashini IndicConformer</span>
+                <span className="text-gov-success font-semibold">Bhashini IndicConformer</span>
               </div>
-              <p className="text-sm text-white font-serif leading-relaxed italic bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+              <p className="text-sm text-gov-text font-serif leading-relaxed italic bg-gov-card p-3 rounded-sm border border-gov-border">
                 "{selectedSim.rawInput}"
               </p>
             </div>
 
             {/* Try Custom Vernacular Input */}
-            <div className="pt-2 border-t border-slate-800 space-y-2">
-              <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+            <div className="pt-2 border-t border-gov-border space-y-2">
+              <label className="text-xs font-semibold text-gov-muted flex items-center justify-between">
                 <span>Or Type Your Own Citizen Feedback:</span>
-                <span className="text-[10px] text-slate-500">Any language / dialect</span>
+                <span className="text-[10px] text-gov-muted">Any language / dialect</span>
               </label>
               <textarea
                 rows={3}
                 value={customInput}
                 onChange={(e) => setCustomInput(e.target.value)}
                 placeholder="Type or paste any road, water, or electric issue in Hindi, Tamil, Bengali, or English..."
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500"
+                className="w-full bg-gov-inset border border-gov-border rounded-sm p-3 text-xs text-gov-text placeholder-slate-500 focus:outline-none focus:border-gov-navy"
               />
               <button
                 onClick={handleSimulateCustom}
                 disabled={isProcessing || !customInput.trim()}
-                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-sm text-xs font-bold bg-gov-navy hover:bg-gov-teal text-white shadow-md transition-all active:scale-95 disabled:opacity-50 cursor-pointer"
               >
                 {isProcessing ? (
                   <>Processing through Bhashini & GatiShakti...</>
@@ -172,17 +171,17 @@ export const FeedbackSimulator: React.FC = () => {
 
         {/* Right Column: AI Extraction & GatiShakti Triangulation */}
         <div className="lg:col-span-7 space-y-4">
-          <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-5">
-            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-              <span className="text-xs font-bold text-emerald-400 uppercase tracking-wider flex items-center gap-1.5">
+          <div className="bg-gov-card p-6 rounded-sm border border-gov-border  space-y-5">
+            <div className="flex items-center justify-between border-b border-gov-border pb-3">
+              <span className="text-xs font-bold text-gov-success uppercase tracking-wider flex items-center gap-1.5">
                 <Cpu className="w-4 h-4" />
                 Live 4-Stage AI Triangulation Pipeline
               </span>
               <span
                 className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase ${
                   selectedSim.detectedEmotionUrgency === 'Emergency Critical'
-                    ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    ? 'bg-rose-500/20 text-gov-error border border-rose-500/30'
+                    : 'bg-gov-teal-soft text-gov-teal border border-gov-teal'
                 }`}
               >
                 {selectedSim.detectedEmotionUrgency}
@@ -191,81 +190,81 @@ export const FeedbackSimulator: React.FC = () => {
 
             {/* Pipeline Stage Indicators */}
             <div className="grid grid-cols-4 gap-2 text-center text-[11px]">
-              <div className={`p-2 rounded-lg border ${activeStep >= 1 ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+              <div className={`p-2 rounded-sm border ${activeStep >= 1 ? 'bg-gov-success-bg border-emerald-500 text-gov-success' : 'bg-gov-inset text-gov-muted border-gov-border'}`}>
                 1. Speech ASR
               </div>
-              <div className={`p-2 rounded-lg border ${activeStep >= 2 ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+              <div className={`p-2 rounded-sm border ${activeStep >= 2 ? 'bg-gov-success-bg border-emerald-500 text-gov-success' : 'bg-gov-inset text-gov-muted border-gov-border'}`}>
                 2. NLU Canonical
               </div>
-              <div className={`p-2 rounded-lg border ${activeStep >= 3 ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+              <div className={`p-2 rounded-sm border ${activeStep >= 3 ? 'bg-gov-success-bg border-emerald-500 text-gov-success' : 'bg-gov-inset text-gov-muted border-gov-border'}`}>
                 3. Entity & Risk
               </div>
-              <div className={`p-2 rounded-lg border ${activeStep >= 4 ? 'bg-emerald-950/40 border-emerald-500 text-emerald-300' : 'bg-slate-800 text-slate-500 border-slate-700'}`}>
+              <div className={`p-2 rounded-sm border ${activeStep >= 4 ? 'bg-gov-success-bg border-emerald-500 text-gov-success' : 'bg-gov-inset text-gov-muted border-gov-border'}`}>
                 4. GatiShakti GIS
               </div>
             </div>
 
             {/* Canonical English Translation */}
-            <div className="bg-slate-800/40 p-4 rounded-xl border border-slate-700/60 space-y-1">
-              <div className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+            <div className="bg-gov-inset p-4 rounded-sm border border-gov-border space-y-1">
+              <div className="text-xs font-semibold text-gov-muted flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-gov-success" />
                 Canonical English Translation & Intent
               </div>
-              <p className="text-xs text-slate-200 leading-relaxed">
+              <p className="text-xs text-gov-text leading-relaxed">
                 {selectedSim.englishTranslation}
               </p>
             </div>
 
             {/* Named Entity Extraction Grid */}
             <div className="space-y-2">
-              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              <div className="text-xs font-bold text-gov-muted uppercase tracking-wider">
                 Extracted Infrastructure Entities
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/60">
-                  <div className="text-slate-400 text-[11px]">Asset Type</div>
-                  <div className="font-bold text-white mt-0.5">{selectedSim.extractedEntities.assetType}</div>
+                <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                  <div className="text-gov-muted text-[11px]">Asset Type</div>
+                  <div className="font-bold text-gov-text mt-0.5">{selectedSim.extractedEntities.assetType}</div>
                 </div>
 
-                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/60">
-                  <div className="text-slate-400 text-[11px]">Defect & Threat</div>
-                  <div className="font-bold text-rose-300 mt-0.5">{selectedSim.extractedEntities.defect}</div>
+                <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                  <div className="text-gov-muted text-[11px]">Defect & Threat</div>
+                  <div className="font-bold text-gov-error mt-0.5">{selectedSim.extractedEntities.defect}</div>
                 </div>
 
-                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/60">
-                  <div className="text-slate-400 text-[11px]">Colloquial Landmark</div>
-                  <div className="font-bold text-amber-300 mt-0.5">{selectedSim.extractedEntities.landmark}</div>
+                <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                  <div className="text-gov-muted text-[11px]">Colloquial Landmark</div>
+                  <div className="font-bold text-gov-teal mt-0.5">{selectedSim.extractedEntities.landmark}</div>
                 </div>
 
-                <div className="bg-slate-800/50 p-3 rounded-lg border border-slate-700/60">
-                  <div className="text-slate-400 text-[11px]">Public Impact Radius</div>
-                  <div className="font-bold text-cyan-300 mt-0.5">{selectedSim.extractedEntities.impactRadius}</div>
+                <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                  <div className="text-gov-muted text-[11px]">Public Impact Radius</div>
+                  <div className="font-bold text-gov-teal mt-0.5">{selectedSim.extractedEntities.impactRadius}</div>
                 </div>
               </div>
             </div>
 
             {/* PM GatiShakti Triangulation Result */}
-            <div className="bg-gradient-to-br from-indigo-950/40 to-slate-900 p-4 rounded-xl border border-indigo-500/40 space-y-3">
+            <div className="bg-gov-card p-4 rounded-sm border border-gov-border space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-indigo-300 flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-cyan-400" />
+                <span className="font-bold text-gov-navy flex items-center gap-1.5">
+                  <Layers className="w-4 h-4 text-gov-teal" />
                   PM GatiShakti Masterplan Reconciled Match
                 </span>
-                <span className="font-mono text-[11px] text-emerald-400">
+                <span className="font-mono text-[11px] text-gov-success">
                   {selectedSim.gatiShaktiTriangulation.gisConfidence}
                 </span>
               </div>
 
               <div className="text-xs space-y-1">
-                <div className="text-slate-300">
-                  GIS Layer: <strong className="text-white font-mono">{selectedSim.gatiShaktiTriangulation.layerMatched}</strong>
+                <div className="text-gov-muted">
+                  GIS Layer: <strong className="text-gov-text font-mono">{selectedSim.gatiShaktiTriangulation.layerMatched}</strong>
                 </div>
-                <div className="text-slate-300">
-                  Responsible Agency: <strong className="text-amber-300">{selectedSim.gatiShaktiTriangulation.responsibleAgency}</strong>
+                <div className="text-gov-muted">
+                  Responsible Agency: <strong className="text-gov-teal">{selectedSim.gatiShaktiTriangulation.responsibleAgency}</strong>
                 </div>
               </div>
 
-              <div className="p-3 rounded-lg bg-indigo-900/40 border border-indigo-700/60 text-xs text-indigo-100 font-medium">
+              <div className="p-3 rounded-sm bg-gov-navy-soft border border-gov-border text-xs text-gov-text font-medium">
                 <strong>Automated DPI Action: </strong>
                 {selectedSim.gatiShaktiTriangulation.recommendedEscalation}
               </div>

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Header } from './components/Header';
 import { LiveResolutionPrototype } from './components/LiveResolutionPrototype';
 import { CitizenTrackPortal } from './components/CitizenTrackPortal';
@@ -18,31 +18,56 @@ import { PolicymakerDossier } from './components/PolicymakerDossier';
 import { DeepResearchStudio } from './components/DeepResearchStudio';
 import { DocxStudio } from './components/DocxStudio';
 import { generateSamvaadSetuDocx } from './utils/docxExport';
-import confetti from 'canvas-confetti';
-import {
-  FileText,
-  Download,
-  CheckCircle2,
-  Globe2,
-  ShieldCheck,
-  Sparkles,
-  Layers
-} from 'lucide-react';
+import { CheckCircle2, Download } from 'lucide-react';
+
+const VIEW_TO_TAB: Record<string, string> = {
+  citizen: 'citizen-portal',
+  gov: 'government-desk',
+  prototype: 'prototype',
+  overview: 'overview',
+};
+
+function readDeepLink(): { tab: string; id?: string } {
+  const params = new URLSearchParams(window.location.search);
+  const view = params.get('view') || '';
+  const id = params.get('id') || undefined;
+  return { tab: VIEW_TO_TAB[view] || 'citizen-portal', id };
+}
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<string>('prototype');
+  const initial = readDeepLink();
+  const [activeTab, setActiveTab] = useState<string>(initial.tab);
+  const [deepLinkId, setDeepLinkId] = useState<string | undefined>(initial.id);
   const [isExporting, setIsExporting] = useState<boolean>(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+
+  const navigateTab = (tab: string, id?: string) => {
+    setActiveTab(tab);
+    setDeepLinkId(id);
+    const params = new URLSearchParams(window.location.search);
+    const view =
+      tab === 'citizen-portal' ? 'citizen' : tab === 'government-desk' ? 'gov' : tab === 'prototype' ? 'prototype' : tab;
+    params.set('view', view);
+    if (id) params.set('id', id);
+    else params.delete('id');
+    const next = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, '', next);
+  };
+
+  useEffect(() => {
+    const onPop = () => {
+      const link = readDeepLink();
+      setActiveTab(link.tab);
+      setDeepLinkId(link.id);
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
 
   const handleQuickExportDocx = async () => {
     setIsExporting(true);
     try {
       const fileName = await generateSamvaadSetuDocx();
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.7 },
-      });
       setExportNotice(`Downloaded: ${fileName}`);
       setTimeout(() => setExportNotice(null), 6000);
     } catch (err) {
@@ -53,95 +78,68 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
-      {/* Sticky Main Header */}
+    <div className="min-h-screen bg-gov-page text-gov-text flex flex-col font-sans selection:bg-gov-teal-soft selection:text-gov-navy">
+      <a href="#main-content" className="gov-skip-link">
+        Skip to main content
+      </a>
+
       <Header
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => navigateTab(tab)}
         onQuickExportDocx={handleQuickExportDocx}
         isExporting={isExporting}
       />
 
-      {/* Quick Export Toast Alert */}
       {exportNotice && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-500 text-slate-950 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 font-semibold text-xs sm:text-sm animate-bounce">
-          <CheckCircle2 className="w-5 h-5" />
+        <div
+          role="status"
+          className="gov-banner-success mx-4 sm:mx-auto mt-4 max-w-7xl w-auto px-4 py-3 flex items-center gap-3 font-semibold text-sm"
+        >
+          <CheckCircle2 className="w-5 h-5" aria-hidden="true" />
           <span>{exportNotice}</span>
         </div>
       )}
 
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
-        {activeTab === 'citizen-portal' && <CitizenTrackPortal />}
+      <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {activeTab === 'citizen-portal' && <CitizenTrackPortal initialTrackingId={deepLinkId} />}
 
-        {activeTab === 'government-desk' && <GovernmentWorkSurface />}
+        {activeTab === 'government-desk' && <GovernmentWorkSurface initialTrackingId={deepLinkId} />}
 
         {activeTab === 'prototype' && (
-          <LiveResolutionPrototype onExportDocx={handleQuickExportDocx} />
+          <LiveResolutionPrototype
+            onExportDocx={handleQuickExportDocx}
+            onSavedTicket={(id) => navigateTab('citizen-portal', id)}
+          />
         )}
 
         {activeTab === 'overview' && (
           <Overview
-            onNavigateToTab={(tab) => setActiveTab(tab)}
+            onNavigateToTab={(tab) => navigateTab(tab)}
             onExportDocx={handleQuickExportDocx}
           />
         )}
 
         {activeTab === 'edge-cases' && <EdgeCaseExplorer />}
-
         {activeTab === 'fusion' && <DatasetFusionEngine />}
-
         {activeTab === 'gatishakti' && <GatiShaktiMapHub />}
-
         {activeTab === 'simulator' && <FeedbackSimulator />}
-
         {activeTab === 'impact' && <DpiImpactTracker />}
-
-        {activeTab === 'policymakers' && (
-          <PolicymakerDossier onExportDocx={handleQuickExportDocx} />
-        )}
-
-        {activeTab === 'research' && (
-          <DeepResearchStudio onExportDocx={handleQuickExportDocx} />
-        )}
-
+        {activeTab === 'policymakers' && <PolicymakerDossier onExportDocx={handleQuickExportDocx} />}
+        {activeTab === 'research' && <DeepResearchStudio onExportDocx={handleQuickExportDocx} />}
         {activeTab === 'docx-studio' && <DocxStudio />}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-slate-900 border-t border-slate-800 text-slate-400 py-8 px-4 sm:px-6 text-xs mt-12">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 text-amber-400 font-bold flex items-center justify-center border border-amber-500/30">
-              सं
-            </div>
-            <div>
-              <div className="font-bold text-white text-sm">
-                SAMVAAD-SETU 360° (संवाद सेतु)
-              </div>
-              <div className="text-[11px] text-slate-500">
-                Track 1: AI for Digital Public Infrastructure & Governance • BRICS Innovation 2026
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 text-[11px] text-slate-400">
-            <span>Bhashini Multilingual ASR</span>
-            <span>•</span>
-            <span>PM GatiShakti 1,400+ GIS Layers</span>
-            <span>•</span>
-            <span>DPDP Act 2023 Compliant</span>
-            <span>•</span>
-            <span>Digital Public Goods Standard</span>
-          </div>
-
+      <footer className="gov-footer py-6 px-4 text-sm">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
+          <span>SAMVAAD-SETU 360. Official civic portal for citizen tickets and briefing materials.</span>
           <button
+            type="button"
             onClick={handleQuickExportDocx}
             disabled={isExporting}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-300 border border-slate-700 hover:border-slate-600 transition-all cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-sm bg-gov-card border border-gov-border text-gov-navy"
           >
-            <Download className="w-3.5 h-3.5" />
-            <span>{isExporting ? 'Exporting...' : 'Export DOCX'}</span>
+            <Download className="w-4 h-4" aria-hidden="true" />
+            Export DOCX
           </button>
         </div>
       </footer>

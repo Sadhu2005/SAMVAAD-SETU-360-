@@ -1,5 +1,6 @@
+import 'dotenv/config';
+
 import express, { Request, Response } from 'express';
-import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
@@ -8,10 +9,11 @@ import {
   getCaseByTrackingId,
   getAllCases,
   updateCaseByOfficer,
-  citizenVerifyResolution
+  citizenVerifyResolution,
+  filterOfficerInbox,
+  appendCaseNote,
 } from './src/services/caseService';
-
-dotenv.config();
+import { last4Matches, maskCaseForPublic } from './src/utils/ticketLogic';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -58,6 +60,12 @@ v1Router.get('/meta', (_req: Request, res: Response) => {
       { path: '/api/v1/cases/:trackingId', method: 'GET', description: 'Retrieve case status & audit log' },
       { path: '/api/v1/cases/:trackingId', method: 'PATCH', description: 'Officer triage, assignment & proof upload' },
       { path: '/api/v1/cases/:trackingId/verify', method: 'POST', description: 'Citizen closed-loop resolution sign-off' },
+      { path: '/api/v1/tickets', method: 'POST', description: 'Citizen ticket submit (alias)' },
+      { path: '/api/v1/tickets/:id', method: 'GET', description: 'Public track (last4 unlocks timeline)' },
+      { path: '/api/v1/officer/inbox', method: 'GET', description: 'Officer inbox with filters' },
+      { path: '/api/v1/tickets/:id/assign', method: 'POST', description: 'Officer assign department' },
+      { path: '/api/v1/tickets/:id/proof', method: 'POST', description: 'Officer upload completion proof' },
+      { path: '/api/v1/tickets/:id/verify', method: 'POST', description: 'Citizen yes/no verification' },
       { path: '/api/v1/gemini/deep-research', method: 'POST', description: 'Execute DPI deep policy research' },
       { path: '/api/v1/gemini/solve-edge-case', method: 'POST', description: 'Mitigate governance edge cases' },
       { path: '/api/v1/gemini/solve-pipeline', method: 'POST', description: 'End-to-end 6-stage DPI resolution pipeline' },
@@ -316,9 +324,25 @@ v1Router.get('/cases', async (_req: Request, res: Response) => {
   }
 });
 
+function expectedOfficerPin(): string {
+  return process.env.OFFICER_DESK_PIN || process.env.VITE_OFFICER_DESK_PIN || 'setu-desk-2026';
+}
+
+function requireOfficerPin(req: Request, res: Response): boolean {
+  const pin = String(req.headers['x-officer-pin'] || req.body?.deskPin || '');
+  if (pin !== expectedOfficerPin()) {
+    res.status(401).json({ success: false, error: 'Officer desk PIN required' });
+    return false;
+  }
+  return true;
+}
+
 v1Router.post('/cases', async (req: Request, res: Response) => {
   try {
-    const { title, description, category, district, state, contactNumber, spokenDialect, channel, urgency } = req.body;
+    const {
+      title, description, category, district, state, contactNumber,
+      spokenDialect, channel, urgency, village, lat, lng, language, voiceUrl, photoUrl, suggestedScheme, dipsScore,
+    } = req.body;
     if (!title || !description || !category || !district || !state || !contactNumber) {
       return res.status(400).json({ success: false, error: 'Missing mandatory intake fields' });
     }
@@ -332,6 +356,14 @@ v1Router.post('/cases', async (req: Request, res: Response) => {
       spokenDialect,
       channel,
       urgency,
+      village,
+      lat,
+      lng,
+      language,
+      voiceUrl,
+      photoUrl,
+      suggestedScheme,
+      dipsScore,
     });
     res.status(201).json({ success: true, trackingId: newCase.trackingId, case: newCase });
   } catch (err: any) {
@@ -342,11 +374,21 @@ v1Router.post('/cases', async (req: Request, res: Response) => {
 v1Router.get('/cases/:trackingId', async (req: Request, res: Response) => {
   try {
     const { trackingId } = req.params;
+    const last4 = String(req.query.last4 || '');
     const result = await getCaseByTrackingId(trackingId);
     if (!result.caseData) {
       return res.status(404).json({ success: false, error: `Case ${trackingId} not found` });
     }
-    res.json({ success: true, case: result.caseData, auditLogs: result.auditLogs });
+    const reveal = last4 && result.caseData.phoneLast4
+      ? last4Matches(result.caseData.phoneLast4, last4)
+      : false;
+    const masked = !reveal;
+    res.json({
+      success: true,
+      masked,
+      case: maskCaseForPublic(result.caseData, reveal),
+      auditLogs: reveal ? result.auditLogs : result.auditLogs.map((l) => ({ ...l, details: l.action })),
+    });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
   }
@@ -379,7 +421,7 @@ v1Router.patch('/cases/:trackingId', async (req: Request, res: Response) => {
 v1Router.post('/cases/:trackingId/verify', async (req: Request, res: Response) => {
   try {
     const { trackingId } = req.params;
-    const { verified, satisfactionRating, feedbackText } = req.body;
+    const { verified, satisfactionRating, feedbackText, last4 } = req.body;
     if (typeof verified !== 'boolean') {
       return res.status(400).json({ success: false, error: 'verified (boolean) is required' });
     }
@@ -388,10 +430,158 @@ v1Router.post('/cases/:trackingId/verify', async (req: Request, res: Response) =
       verified,
       satisfactionRating,
       feedbackText,
+      last4,
     });
     res.json({ success: true, case: updated });
   } catch (err: any) {
     res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// Ticket aliases + officer inbox
+v1Router.post('/tickets', async (req: Request, res: Response) => {
+  try {
+    const {
+      title, description, category, district, state, contactNumber,
+      spokenDialect, channel, urgency, village, lat, lng, language, voiceUrl, photoUrl, suggestedScheme, dipsScore,
+    } = req.body;
+    if (!title || !description || !category || !district || !state || !contactNumber) {
+      return res.status(400).json({ success: false, error: 'Missing mandatory intake fields' });
+    }
+    const newCase = await submitCitizenCase({
+      title, description, category, district, state, contactNumber,
+      spokenDialect, channel, urgency, village, lat, lng, language, voiceUrl, photoUrl, suggestedScheme, dipsScore,
+    });
+    res.status(201).json({ success: true, trackingId: newCase.trackingId, case: newCase });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+async function handleTicketGet(req: Request, res: Response) {
+  req.params.trackingId = req.params.id || req.params.trackingId;
+  const last4 = String(req.query.last4 || '');
+  try {
+    const result = await getCaseByTrackingId(req.params.trackingId);
+    if (!result.caseData) {
+      return res.status(404).json({ success: false, error: `Case ${req.params.trackingId} not found` });
+    }
+    const reveal = last4 && result.caseData.phoneLast4
+      ? last4Matches(result.caseData.phoneLast4, last4)
+      : false;
+    res.json({
+      success: true,
+      masked: !reveal,
+      case: maskCaseForPublic(result.caseData, reveal),
+      auditLogs: reveal ? result.auditLogs : result.auditLogs.map((l) => ({ ...l, details: l.action })),
+    });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+}
+
+v1Router.get('/tickets/:id', handleTicketGet);
+
+v1Router.get('/officer/inbox', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    const all = await getAllCases();
+    const cases = filterOfficerInbox(all, {
+      district: req.query.district as string | undefined,
+      urgency: req.query.urgency as string | undefined,
+      department: req.query.department as string | undefined,
+      slaBreach: req.query.slaBreach === '1',
+    });
+    res.json({ success: true, count: cases.length, cases });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.post('/tickets/:id/assign', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    const updated = await updateCaseByOfficer({
+      trackingId: req.params.id,
+      status: req.body.status || 'assigned',
+      officerName: req.body.officerName,
+      officerRole: req.body.officerRole || 'district_admin',
+      officerRoleKey: req.body.officerRoleKey,
+      department: req.body.department,
+      assignedOfficer: req.body.assignedOfficer,
+      remarks: req.body.remarks || 'Assigned',
+    });
+    res.json({ success: true, case: updated });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.post('/tickets/:id/proof', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    const updated = await updateCaseByOfficer({
+      trackingId: req.params.id,
+      status: 'proof_uploaded',
+      officerName: req.body.officerName,
+      officerRole: req.body.officerRole || 'nodal_engineer',
+      officerRoleKey: req.body.officerRoleKey,
+      remarks: req.body.remarks || 'Proof uploaded',
+      completionProof: req.body.completionProof,
+    });
+    res.json({ success: true, case: updated });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.post('/tickets/:id/verify', async (req: Request, res: Response) => {
+  req.params.trackingId = req.params.id;
+  try {
+    const { verified, satisfactionRating, feedbackText, last4 } = req.body;
+    if (typeof verified !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'verified (boolean) is required' });
+    }
+    const updated = await citizenVerifyResolution({
+      trackingId: req.params.id,
+      verified,
+      satisfactionRating,
+      feedbackText,
+      last4,
+    });
+    res.json({ success: true, case: updated });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.post('/tickets/:id/action', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    if (req.body.noteOnly) {
+      const updated = await appendCaseNote({
+        trackingId: req.params.id,
+        actor: req.body.officerName,
+        role: req.body.officerRole || 'field_officer',
+        details: req.body.remarks,
+      });
+      return res.json({ success: true, case: updated });
+    }
+    const updated = await updateCaseByOfficer({
+      trackingId: req.params.id,
+      status: req.body.status,
+      officerName: req.body.officerName,
+      officerRole: req.body.officerRole || 'field_officer',
+      officerRoleKey: req.body.officerRoleKey,
+      department: req.body.department,
+      assignedOfficer: req.body.assignedOfficer,
+      remarks: req.body.remarks || `Status to ${req.body.status}`,
+      completionProof: req.body.completionProof,
+      closeOverrideReason: req.body.closeOverrideReason,
+    });
+    res.json({ success: true, case: updated });
+  } catch (err: any) {
+    res.status(400).json({ success: false, error: err.message });
   }
 });
 

@@ -6,7 +6,6 @@ import {
   AlertTriangle,
   ShieldCheck,
   Layers,
-  Sparkles,
   ArrowRight,
   PhoneCall,
   Camera,
@@ -22,7 +21,6 @@ import {
   RefreshCw,
   Send
 } from 'lucide-react';
-import confetti from 'canvas-confetti';
 
 interface PresetScenario {
   id: string;
@@ -43,7 +41,7 @@ const PRESET_SCENARIOS: PresetScenario[] = [
     id: 'SCENARIO-1',
     title: 'Bastar Tribal Causeway Submergence (High Flood Distress)',
     badge: 'Monsoon Hazard',
-    badgeColor: 'border-rose-500/40 text-rose-400 bg-rose-500/10',
+    badgeColor: 'border-gov-error text-gov-error bg-rose-500/10',
     language: 'Bundeli / Gondi Dialect',
     channel: 'Toll-Free IVR 1912 (Acoustic Noise: Tractor Engine)',
     district: 'Bastar',
@@ -55,7 +53,7 @@ const PRESET_SCENARIOS: PresetScenario[] = [
     id: 'SCENARIO-2',
     title: 'Mewat / Nuh Canal Tail-End Parched (Inter-Agency Dispute)',
     badge: 'Irrigation Crisis',
-    badgeColor: 'border-amber-500/40 text-amber-400 bg-amber-500/10',
+    badgeColor: 'border-gov-teal text-gov-teal bg-gov-teal-soft',
     language: 'Mewati / Hindi Dialect',
     channel: 'WhatsApp Vernacular Audio Note',
     district: 'Nuh (Mewat)',
@@ -80,7 +78,7 @@ const PRESET_SCENARIOS: PresetScenario[] = [
     id: 'SCENARIO-4',
     title: 'PHC Solar Cold-Chain Vaccine Spoilage (Rural Health)',
     badge: 'Healthcare Emergency',
-    badgeColor: 'border-cyan-500/40 text-cyan-400 bg-cyan-500/10',
+    badgeColor: 'border-cyan-500/40 text-gov-teal bg-cyan-500/10',
     language: 'Marathi Spoken Vernacular',
     channel: 'ASHA Worker CSC Tablet Store-and-Forward',
     district: 'Gadchiroli',
@@ -92,9 +90,10 @@ const PRESET_SCENARIOS: PresetScenario[] = [
 
 interface LiveResolutionPrototypeProps {
   onExportDocx: () => void;
+  onSavedTicket?: (trackingId: string) => void;
 }
 
-export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = ({ onExportDocx }) => {
+export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = ({ onExportDocx, onSavedTicket }) => {
   const [selectedScenario, setSelectedScenario] = useState<PresetScenario>(PRESET_SCENARIOS[0]);
   const [customInputText, setCustomInputText] = useState<string>('');
   const [isCustomMode, setIsCustomMode] = useState<boolean>(false);
@@ -111,6 +110,9 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
 
   // Play audio simulation
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [savingTicket, setSavingTicket] = useState(false);
+  const [savedTicketId, setSavedTicketId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   const activeText = isCustomMode ? customInputText : selectedScenario.rawInput;
   const isSybil = !isCustomMode && selectedScenario.isSybilAttack;
@@ -173,17 +175,46 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
       setTimeout(() => {
         setActivePipelineStep(6);
         setIsRunningPipeline(false);
-        if (!isSybil) {
-          confetti({
-            particleCount: 75,
-            spread: 60,
-            origin: { y: 0.7 },
-          });
-        }
       }, 3000);
     } catch (err) {
       console.error('Pipeline error:', err);
       setIsRunningPipeline(false);
+    }
+  };
+
+  const handleSaveAsRealTicket = async () => {
+    setSavingTicket(true);
+    setSaveError(null);
+    try {
+      const title =
+        pipelineOutput?.namedEntities?.asset ||
+        pipelineOutput?.projectSanctionDPR?.projectName ||
+        'Citizen infrastructure request';
+      const res = await fetch('/api/v1/tickets', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title,
+          description: activeText,
+          category: 'Bridges & Culverts',
+          district: isCustomMode ? 'Custom District' : selectedScenario.district,
+          state: isCustomMode ? 'Custom State' : selectedScenario.state,
+          contactNumber: '9999990000',
+          spokenDialect: isCustomMode ? 'Hindi / Regional Dialect' : selectedScenario.language,
+          channel: 'Web Citizen Portal',
+          urgency: pipelineOutput?.namedEntities?.urgency || 'High',
+          dipsScore: pipelineOutput?.dipsScore?.score,
+          suggestedScheme: pipelineOutput?.projectSanctionDPR?.schemeAlignment,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Save failed');
+      setSavedTicketId(data.trackingId);
+      onSavedTicket?.(data.trackingId);
+    } catch (err: any) {
+      setSaveError(err.message);
+    } finally {
+      setSavingTicket(false);
     }
   };
 
@@ -200,11 +231,6 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
     if (digit === 1) {
       setTimeout(() => {
         setCallStatus('verified');
-        confetti({
-          particleCount: 60,
-          spread: 50,
-          origin: { y: 0.8 },
-        });
       }, 800);
     }
   };
@@ -212,13 +238,12 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Hero Header */}
-      <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-2xl border border-slate-800 shadow-2xl space-y-4">
+      <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30">
-            <Sparkles className="w-3.5 h-3.5" />
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-gov-teal-soft text-gov-teal border border-gov-teal">
             Live End-to-End AI DPI Resolution Prototype (प्रोटोटाइप समाधान)
           </div>
-          <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
+          <span className="text-xs font-mono text-gov-success font-bold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20">
             ● 6-Stage Autonomous DPI Pipeline Active
           </span>
         </div>
@@ -227,7 +252,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
           Experience the Solution in Action: Citizen Voice to Sanctioned DPR
         </h2>
 
-        <p className="text-sm text-slate-300 max-w-4xl leading-relaxed">
+        <p className="text-sm text-gov-muted max-w-4xl leading-relaxed">
           Instead of just describing the problem, this prototype <strong>actually executes the entire solution in real-time</strong>. 
           Pick a grounded rural scenario or type your own request. Watch the system de-noise agricultural noise, suppress contractor cartels, 
           triangulate with <strong>PM GatiShakti GIS</strong>, calculate <strong>DIPS equity scores</strong>, auto-generate a sanctioned 
@@ -235,7 +260,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
         </p>
 
         {/* Preset Selector Tabs */}
-        <div className="pt-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-slate-800/80">
+        <div className="pt-2 flex items-center gap-2 overflow-x-auto no-scrollbar border-t border-gov-border">
           {PRESET_SCENARIOS.map((scen) => (
             <button
               key={scen.id}
@@ -245,10 +270,10 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                 setActivePipelineStep(0);
                 setPipelineOutput(null);
               }}
-              className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-2 rounded-sm text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-1.5 ${
                 !isCustomMode && selectedScenario.id === scen.id
-                  ? 'bg-amber-500 text-slate-950 font-bold shadow-md'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                  ? 'bg-gov-teal text-white font-bold shadow-md'
+                  : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
               }`}
             >
               <span>{scen.title.split('(')[0]}</span>
@@ -264,31 +289,31 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
               setActivePipelineStep(0);
               setPipelineOutput(null);
             }}
-            className={`px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+            className={`px-3 py-2 rounded-sm text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               isCustomMode
-                ? 'bg-indigo-600 text-white font-bold shadow-md'
-                : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
+                ? 'bg-gov-navy text-gov-text font-bold shadow-md'
+                : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
             }`}
           >
-            ✏️ Custom Live Input Sandbox
+            Custom Live Input Sandbox
           </button>
         </div>
       </div>
 
       {/* Input Ingestion Stage Box */}
-      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-3">
+      <div className="bg-gov-card p-6 rounded-sm border border-gov-border  space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gov-border pb-3">
           <div>
-            <span className="text-[11px] font-bold text-amber-400 uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-gov-teal uppercase tracking-wider">
               Stage 0: Omnichannel Citizen Ingestion Gateway
             </span>
-            <h3 className="text-lg font-bold text-white mt-0.5">
+            <h3 className="text-lg font-bold text-gov-text mt-0.5">
               {isCustomMode ? 'Custom Citizen Infrastructure Request' : selectedScenario.title}
             </h3>
           </div>
 
           <div className="flex items-center gap-3 text-xs">
-            <span className="px-2.5 py-1 rounded-full bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+            <span className="px-2.5 py-1 rounded-full bg-gov-inset text-gov-muted border border-gov-border font-mono">
               Gateway: {isCustomMode ? 'Web / WhatsApp Ingestion' : selectedScenario.channel}
             </span>
           </div>
@@ -297,7 +322,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
         {/* Input Text Box or Voice Player */}
         {isCustomMode ? (
           <div className="space-y-2">
-            <label className="text-xs text-slate-400 font-medium">
+            <label className="text-xs text-gov-muted font-medium">
               Enter any citizen infrastructure grievance in any language, dialect, or colloquial slang:
             </label>
             <textarea
@@ -305,13 +330,13 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
               onChange={(e) => setCustomInputText(e.target.value)}
               placeholder="e.g. हमाए गांव में ट्रांसफार्मर जल गया है 2 महीने से, अंधेरा पसरा हुआ है..."
               rows={3}
-              className="w-full bg-slate-950 border border-slate-700 rounded-xl p-3 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+              className="w-full bg-gov-inset border border-gov-border rounded-sm p-3 text-sm text-gov-text placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-gov-navy"
             />
           </div>
         ) : (
-          <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-3">
+          <div className="bg-gov-inset p-4 rounded-sm border border-gov-border space-y-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs">
-              <span className="text-slate-400 font-mono">
+              <span className="text-gov-muted font-mono">
                 Audio Recording: <strong>{selectedScenario.inputAudioDescription}</strong>
               </span>
               <button
@@ -319,7 +344,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                   setIsPlayingAudio(true);
                   setTimeout(() => setIsPlayingAudio(false), 2400);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-indigo-600/30 hover:bg-indigo-600/50 text-indigo-300 border border-indigo-500/30 font-semibold cursor-pointer self-start sm:self-auto"
+                className="flex items-center gap-1.5 px-3 py-1 rounded-sm bg-gov-navy-soft hover:bg-gov-navy-soft text-gov-navy border border-gov-navy font-semibold cursor-pointer self-start sm:self-auto"
               >
                 <Volume2 className="w-3.5 h-3.5" />
                 {isPlayingAudio ? 'Playing Waveform...' : 'Play Simulated Audio'}
@@ -333,13 +358,13 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                   key={i}
                   style={{ height: `${isPlayingAudio ? Math.max(15, Math.round(h * Math.random())) : Math.round(h * 0.35)}px` }}
                   className={`flex-1 rounded-full transition-all duration-150 ${
-                    isPlayingAudio ? 'bg-amber-400' : 'bg-slate-700'
+                    isPlayingAudio ? 'bg-gov-teal' : 'bg-gov-navy-soft'
                   }`}
                 />
               ))}
             </div>
 
-            <div className="text-sm font-medium text-amber-100 bg-slate-900/90 p-3 rounded-lg border border-slate-800 italic">
+            <div className="text-sm font-medium text-gov-navy bg-gov-card p-3 rounded-sm border border-gov-border italic">
               "{selectedScenario.rawInput}"
             </div>
           </div>
@@ -347,23 +372,22 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
 
         {/* Action Trigger */}
         <div className="pt-2 flex flex-wrap items-center justify-between gap-3">
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-gov-muted">
             Click to solve this complaint through all 6 AI DPI layers:
           </div>
 
           <button
             onClick={handleRunPipeline}
             disabled={isRunningPipeline || (!isCustomMode && !selectedScenario.rawInput) || (isCustomMode && !customInputText.trim())}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl font-black text-sm bg-gradient-to-r from-amber-500 via-amber-600 to-emerald-600 hover:from-amber-400 hover:to-emerald-500 text-slate-950 shadow-lg shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-2 px-6 py-3 rounded-sm font-black text-sm bg-gov-teal hover:bg-gov-navy text-white   active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
           >
             {isRunningPipeline ? (
               <>
-                <RefreshCw className="w-4 h-4 animate-spin text-slate-950" />
+                <RefreshCw className="w-4 h-4 animate-spin text-gov-text" />
                 <span>Executing Stage {activePipelineStep} of 6...</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-slate-950" />
                 <span>Run End-to-End AI DPI Resolution</span>
               </>
             )}
@@ -391,20 +415,20 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
               return (
                 <div
                   key={step.num}
-                  className={`p-3 rounded-xl border transition-all flex flex-col justify-between ${
+                  className={`p-3 rounded-sm border transition-all flex flex-col justify-between ${
                     isDone
-                      ? 'bg-emerald-950/40 border-emerald-500/60 text-emerald-300'
+                      ? 'bg-gov-success-bg border-emerald-500/60 text-gov-success'
                       : isCurrent
-                      ? 'bg-amber-950/40 border-amber-500 text-amber-300 animate-pulse'
-                      : 'bg-slate-900/60 border-slate-800 text-slate-500'
+                      ? 'bg-gov-teal-soft border-gov-teal text-gov-teal animate-pulse'
+                      : 'bg-gov-card border-gov-border text-gov-muted'
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-mono font-bold text-[10px]">STAGE 0{step.num}</span>
                     {isDone ? (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-gov-success" />
                     ) : isCurrent ? (
-                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin text-gov-teal" />
                     ) : (
                       <Icon className="w-3.5 h-3.5 text-slate-600" />
                     )}
@@ -419,50 +443,50 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Stage 1: Bhashini IndicConformer Ingestion & DPDP Tokenization */}
             {activePipelineStep >= 1 && (
-              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div className="bg-gov-card p-5 rounded-sm border border-gov-border  space-y-4">
+                <div className="flex items-center justify-between border-b border-gov-border pb-2.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-sm bg-gov-navy-soft text-gov-navy flex items-center justify-center font-bold text-xs">
                       1
                     </div>
-                    <h4 className="font-bold text-white text-sm">
+                    <h4 className="font-bold text-gov-text text-sm">
                       Bhashini IndicConformer & DPDP Act 2023 Shield
                     </h4>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-indigo-500/10 text-indigo-300 border border-indigo-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-gov-navy-soft text-gov-navy border border-gov-navy">
                     -24dB Spectral De-noised
                   </span>
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                    <div className="text-slate-400 text-[10px] uppercase font-bold">Normalized Speech-to-Text</div>
-                    <div className="text-slate-200 mt-1">
+                  <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                    <div className="text-gov-muted text-[10px] uppercase font-bold">Normalized Speech-to-Text</div>
+                    <div className="text-gov-text mt-1">
                       {pipelineOutput?.bhashiniDenoisedTranscript || 'Processing Bhashini IndicConformer speech acoustic model...'}
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                      <div className="text-slate-400 text-[10px]">Extracted Physical Asset</div>
-                      <div className="font-bold text-amber-400 mt-0.5 truncate">
+                    <div className="bg-gov-inset p-2.5 rounded-sm border border-gov-border">
+                      <div className="text-gov-muted text-[10px]">Extracted Physical Asset</div>
+                      <div className="font-bold text-gov-teal mt-0.5 truncate">
                         {pipelineOutput?.namedEntities?.asset || 'Low-Level Causeway'}
                       </div>
                     </div>
-                    <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                      <div className="text-slate-400 text-[10px]">Urgency Classification</div>
-                      <div className="font-bold text-rose-400 mt-0.5">
+                    <div className="bg-gov-inset p-2.5 rounded-sm border border-gov-border">
+                      <div className="text-gov-muted text-[10px]">Urgency Classification</div>
+                      <div className="font-bold text-gov-error mt-0.5">
                         {pipelineOutput?.namedEntities?.urgency || 'Critical (School cut off)'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex items-center justify-between">
-                    <span className="text-slate-400 text-[10px] flex items-center gap-1">
-                      <Lock className="w-3 h-3 text-emerald-400" />
+                  <div className="bg-gov-inset p-2.5 rounded-sm border border-gov-border flex items-center justify-between">
+                    <span className="text-gov-muted text-[10px] flex items-center gap-1">
+                      <Lock className="w-3 h-3 text-gov-success" />
                       DPDP Zero-Knowledge Token
                     </span>
-                    <span className="font-mono text-emerald-400 text-[10px] truncate max-w-[200px]">
+                    <span className="font-mono text-gov-success text-[10px] truncate max-w-[200px]">
                       {pipelineOutput?.dpdpToken || '0x7f9a2b8e...9f21'}
                     </span>
                   </div>
@@ -472,46 +496,46 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
 
             {/* Stage 2: Sybil-Guard Fraud & Bot Cartel Defense */}
             {activePipelineStep >= 2 && (
-              <div className={`p-5 rounded-2xl border shadow-xl space-y-4 ${
+              <div className={`p-5 rounded-sm border  space-y-4 ${
                 isSybil
                   ? 'bg-rose-950/30 border-rose-500/50'
-                  : 'bg-slate-900 border-slate-800'
+                  : 'bg-gov-card border-gov-border'
               }`}>
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                <div className="flex items-center justify-between border-b border-gov-border pb-2.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-sm bg-emerald-500/20 text-gov-success flex items-center justify-center font-bold text-xs">
                       2
                     </div>
-                    <h4 className="font-bold text-white text-sm">
+                    <h4 className="font-bold text-gov-text text-sm">
                       Sybil-Guard Anti-Astroturfing Defense
                     </h4>
                   </div>
                   <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${
                     isSybil
-                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
-                      : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      ? 'bg-rose-500/20 text-gov-error border-gov-error'
+                      : 'bg-emerald-500/20 text-gov-success border-gov-success'
                   }`}>
                     {pipelineOutput?.sybilDefense?.status || 'Analyzing Cell-Tower Entropy...'}
                   </span>
                 </div>
 
                 <div className="space-y-2 text-xs">
-                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1">
-                    <div className="text-slate-400 text-[10px] uppercase font-bold">Cell-Tower Entropy Analysis</div>
-                    <div className={`font-mono ${isSybil ? 'text-rose-300' : 'text-emerald-300'}`}>
+                  <div className="bg-gov-inset p-3 rounded-sm border border-gov-border space-y-1">
+                    <div className="text-gov-muted text-[10px] uppercase font-bold">Cell-Tower Entropy Analysis</div>
+                    <div className={`font-mono ${isSybil ? 'text-gov-error' : 'text-gov-success'}`}>
                       {pipelineOutput?.sybilDefense?.entropyScore || 'Entropy: 0.89 (High Spatial Variance)'}
                     </div>
                   </div>
 
-                  <div className="p-3 rounded-xl bg-slate-950 border border-slate-800 text-slate-300 leading-relaxed text-[11px]">
+                  <div className="p-3 rounded-sm bg-gov-inset border border-gov-border text-gov-muted leading-relaxed text-[11px]">
                     {isSybil ? (
-                      <span className="text-rose-300">
-                        🚨 <strong>Cartel Attack Suppressed:</strong> 4,500 bot requests detected from 3 identical SIM-boxes within 4 minutes. 
+                      <span className="text-gov-error">
+                        <strong>Cartel Attack Suppressed:</strong> 4,500 bot requests detected from 3 identical SIM-boxes within 4 minutes. 
                         Demand discount applied: 100% penalty. Public spending misallocation prevented.
                       </span>
                     ) : (
-                      <span className="text-emerald-300">
-                        ✅ <strong>Authentic Grassroots Distress:</strong> Verified organic cluster from local telecom towers across 3 Gram Panchayats. Zero bot astroturfing detected.
+                      <span className="text-gov-success">
+                        <strong>Authentic Grassroots Distress:</strong> Verified organic cluster from local telecom towers across 3 Gram Panchayats. Zero bot astroturfing detected.
                       </span>
                     )}
                   </div>
@@ -521,47 +545,47 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
 
             {/* Stage 3: PM GatiShakti 1,400+ GIS Masterplan Fusion */}
             {activePipelineStep >= 3 && (
-              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div className="bg-gov-card p-5 rounded-sm border border-gov-border  space-y-4">
+                <div className="flex items-center justify-between border-b border-gov-border pb-2.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-sm bg-cyan-500/20 text-gov-teal flex items-center justify-center font-bold text-xs">
                       3
                     </div>
-                    <h4 className="font-bold text-white text-sm">
+                    <h4 className="font-bold text-gov-text text-sm">
                       PM GatiShakti GIS Masterplan & Toponym Resolver
                     </h4>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-cyan-500/10 text-gov-teal border border-cyan-500/30">
                     1,400+ GIS Layers
                   </span>
                 </div>
 
                 <div className="space-y-2 text-xs">
                   <div className="grid grid-cols-2 gap-2">
-                    <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                      <div className="text-slate-400 text-[10px]">Matched National Asset ID</div>
-                      <div className="font-mono font-bold text-cyan-400 mt-0.5 truncate">
+                    <div className="bg-gov-inset p-2.5 rounded-sm border border-gov-border">
+                      <div className="text-gov-muted text-[10px]">Matched National Asset ID</div>
+                      <div className="font-mono font-bold text-gov-teal mt-0.5 truncate">
                         {pipelineOutput?.gatiShaktiFusion?.matchedAssetId || 'GATI-CG-BST-BR-4190'}
                       </div>
                     </div>
-                    <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                      <div className="text-slate-400 text-[10px]">Cadastral Parcel</div>
-                      <div className="font-mono font-bold text-white mt-0.5 truncate">
+                    <div className="bg-gov-inset p-2.5 rounded-sm border border-gov-border">
+                      <div className="text-gov-muted text-[10px]">Cadastral Parcel</div>
+                      <div className="font-mono font-bold text-gov-text mt-0.5 truncate">
                         {pipelineOutput?.gatiShaktiFusion?.cadastralPlot || 'Survey of India #314/B'}
                       </div>
                     </div>
                   </div>
 
-                  <div className="bg-indigo-950/30 p-3 rounded-xl border border-indigo-500/40 text-[11px] space-y-1">
-                    <div className="text-indigo-300 font-bold flex items-center gap-1.5">
-                      <Compass className="w-3.5 h-3.5 text-cyan-400" />
+                  <div className="bg-gov-navy-soft p-3 rounded-sm border border-gov-navy text-[11px] space-y-1">
+                    <div className="text-gov-navy font-bold flex items-center gap-1.5">
+                      <Compass className="w-3.5 h-3.5 text-gov-teal" />
                       Inter-Agency Ping-Pong Resolved:
                     </div>
-                    <div className="text-indigo-100">
+                    <div className="text-gov-text">
                       Primary: <strong>{pipelineOutput?.gatiShaktiFusion?.primaryDept || 'State PWD'}</strong> • 
                       Co-owner: <strong>{pipelineOutput?.gatiShaktiFusion?.secondaryDept || 'Water Resources'}</strong>
                     </div>
-                    <div className="text-[10px] text-amber-300 font-mono">
+                    <div className="text-[10px] text-gov-teal font-mono">
                       Unified Joint Work Order: {pipelineOutput?.gatiShaktiFusion?.jointWorkOrderCode || 'UJWO-2026-CG-8821'}
                     </div>
                   </div>
@@ -571,38 +595,38 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
 
             {/* Stage 4: DIPS Mathematical Scoring Engine */}
             {activePipelineStep >= 4 && (
-              <div className="bg-slate-900 p-5 rounded-2xl border border-slate-800 shadow-xl space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
+              <div className="bg-gov-card p-5 rounded-sm border border-gov-border  space-y-4">
+                <div className="flex items-center justify-between border-b border-gov-border pb-2.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-sm bg-gov-teal-soft text-gov-teal flex items-center justify-center font-bold text-xs">
                       4
                     </div>
-                    <h4 className="font-bold text-white text-sm">
+                    <h4 className="font-bold text-gov-text text-sm">
                       DIPS Dynamic Priority Score & Equity Multiplier
                     </h4>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-black bg-gov-teal-soft text-gov-teal border border-gov-teal">
                     Rank: {pipelineOutput?.dipsScore?.rank || '#1 Priority'}
                   </span>
                 </div>
 
                 <div className="space-y-2 text-xs">
                   <div className="grid grid-cols-2 gap-2 text-center">
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                      <div className="text-2xl font-black text-amber-400">
+                    <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                      <div className="text-2xl font-black text-gov-teal">
                         {pipelineOutput?.dipsScore?.score ?? 94.8}
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">DIPS Priority Score (/100)</div>
+                      <div className="text-[10px] text-gov-muted mt-0.5">DIPS Priority Score (/100)</div>
                     </div>
-                    <div className="bg-slate-950 p-3 rounded-xl border border-slate-800">
-                      <div className="text-lg font-black text-emerald-400 mt-1">
+                    <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                      <div className="text-lg font-black text-gov-success mt-1">
                         {pipelineOutput?.dipsScore?.equityMultiplier?.split(' ')[0] || '7.4x'}
                       </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">NITI Aayog MPI Multiplier</div>
+                      <div className="text-[10px] text-gov-muted mt-0.5">NITI Aayog MPI Multiplier</div>
                     </div>
                   </div>
 
-                  <div className="bg-slate-950 p-2.5 rounded-xl border border-slate-800 text-[10px] text-slate-400 font-mono">
+                  <div className="bg-gov-inset p-2.5 rounded-sm border border-gov-border text-[10px] text-gov-muted font-mono">
                     Formula: DIPS = w1*(V*DIEW) + w2*G_infra + w3*S_gati + w4*R_urgency - P_sybil
                   </div>
                 </div>
@@ -611,60 +635,60 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
 
             {/* Stage 5: Project Sanction DPR & Budget Scheme Match */}
             {activePipelineStep >= 5 && (
-              <div className="lg:col-span-2 bg-gradient-to-r from-emerald-950/40 via-slate-900 to-indigo-950/40 p-5 sm:p-6 rounded-2xl border border-emerald-500/50 shadow-2xl space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div className="lg:col-span-2 bg-gov-card p-5 sm:p-6 rounded-sm border border-gov-success  space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gov-border pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-sm">
+                    <div className="w-7 h-7 rounded-sm bg-emerald-500/20 text-gov-success flex items-center justify-center font-bold text-sm">
                       5
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-gov-success uppercase tracking-wider">
                         Official Project Sanction Order (DPR)
                       </span>
-                      <h4 className="text-base sm:text-lg font-black text-white">
+                      <h4 className="text-base sm:text-lg font-black text-gov-text">
                         {pipelineOutput?.projectSanctionDPR?.projectName || 'Bastar High-Level Bridge Mission'}
                       </h4>
                     </div>
                   </div>
 
                   <div className="text-right flex-shrink-0 self-start sm:self-auto">
-                    <div className="text-base font-black text-emerald-400">
+                    <div className="text-base font-black text-gov-success">
                       {pipelineOutput?.projectSanctionDPR?.estimatedCapexInr || '₹6.80 Cr'}
                     </div>
-                    <div className="text-[10px] text-slate-400 font-mono">
+                    <div className="text-[10px] text-gov-muted font-mono">
                       ({pipelineOutput?.projectSanctionDPR?.estimatedCapexUsd || '$820,000 USD'})
                     </div>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <div className="text-slate-400 text-[10px]">Central Scheme Budget Alignment</div>
-                    <div className="font-bold text-white mt-0.5">
+                  <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                    <div className="text-gov-muted text-[10px]">Central Scheme Budget Alignment</div>
+                    <div className="font-bold text-gov-text mt-0.5">
                       {pipelineOutput?.projectSanctionDPR?.schemeAlignment || 'PMGSY Batch IV + 15th FC'}
                     </div>
                   </div>
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <div className="text-slate-400 text-[10px]">Verified Beneficiaries</div>
-                    <div className="font-bold text-cyan-300 mt-0.5">
+                  <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                    <div className="text-gov-muted text-[10px]">Verified Beneficiaries</div>
+                    <div className="font-bold text-gov-teal mt-0.5">
                       {pipelineOutput?.projectSanctionDPR?.beneficiaries || '14,800 Citizens'}
                     </div>
                   </div>
-                  <div className="bg-slate-950/80 p-3 rounded-xl border border-slate-800">
-                    <div className="text-slate-400 text-[10px]">Execution SLA & EIRR</div>
-                    <div className="font-bold text-amber-400 mt-0.5">
+                  <div className="bg-gov-inset p-3 rounded-sm border border-gov-border">
+                    <div className="text-gov-muted text-[10px]">Execution SLA & EIRR</div>
+                    <div className="font-bold text-gov-teal mt-0.5">
                       {pipelineOutput?.projectSanctionDPR?.statutoryExecutionSlaHours || 72}h SLA • {pipelineOutput?.projectSanctionDPR?.eirrPercent || '19.6% EIRR'}
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-emerald-950/30 p-3 rounded-xl border border-emerald-500/30 flex items-center justify-between text-xs">
-                  <span className="text-emerald-200">
+                <div className="bg-emerald-950/30 p-3 rounded-sm border border-emerald-500/30 flex items-center justify-between text-xs">
+                  <span className="text-gov-success">
                     <strong>Executive Action:</strong> {pipelineOutput?.projectSanctionDPR?.executiveAction || 'Project DPR Approved and transmitted via Beckn Protocol.'}
                   </span>
                   <button
                     onClick={onExportDocx}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] shadow transition-all cursor-pointer flex-shrink-0"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-gov-success hover:bg-emerald-500 text-gov-text font-bold text-[11px] shadow transition-all cursor-pointer flex-shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download Sanction Letter
@@ -675,56 +699,56 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
 
             {/* Stage 6: Closed-Loop Citizen Trust Verification (Interactive Call Simulator) */}
             {activePipelineStep >= 6 && !isSybil && (
-              <div className="lg:col-span-2 bg-slate-900 p-5 sm:p-6 rounded-2xl border border-indigo-500/50 shadow-2xl space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
+              <div className="lg:col-span-2 bg-gov-card p-5 sm:p-6 rounded-sm border border-gov-navy  space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gov-border pb-3">
                   <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-sm">
+                    <div className="w-7 h-7 rounded-sm bg-gov-navy-soft text-gov-navy flex items-center justify-center font-bold text-sm">
                       6
                     </div>
                     <div>
-                      <span className="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+                      <span className="text-[10px] font-bold text-gov-navy uppercase tracking-wider">
                         Closed-Loop Proof-of-Completion (CL-PoC)
                       </span>
-                      <h4 className="text-base sm:text-lg font-black text-white">
+                      <h4 className="text-base sm:text-lg font-black text-gov-text">
                         Triangulated Physical Verification & Automated Bhashini Voice Callback
                       </h4>
                     </div>
                   </div>
 
-                  <span className="text-xs font-mono text-emerald-400 font-bold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 self-start sm:self-auto">
+                  <span className="text-xs font-mono text-gov-success font-bold bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 self-start sm:self-auto">
                     Immutable Audit Trail
                   </span>
                 </div>
 
                 {/* 2 Verification Proof Cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                  <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
-                    <div className="text-amber-400 font-bold flex items-center gap-1.5">
+                  <div className="bg-gov-inset p-3.5 rounded-sm border border-gov-border space-y-1">
+                    <div className="text-gov-teal font-bold flex items-center gap-1.5">
                       <Camera className="w-3.5 h-3.5" />
                       Gate 1: Geo-Tagged EXIF Field Photo
                     </div>
-                    <p className="text-slate-300 text-[11px]">
+                    <p className="text-gov-muted text-[11px]">
                       {pipelineOutput?.closedLoopVerification?.geoPhotoCheck || 'GPS Lat: 19.074, Long: 81.956 verified; concrete abutment cured.'}
                     </p>
                   </div>
 
-                  <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-1">
-                    <div className="text-cyan-400 font-bold flex items-center gap-1.5">
+                  <div className="bg-gov-inset p-3.5 rounded-sm border border-gov-border space-y-1">
+                    <div className="text-gov-teal font-bold flex items-center gap-1.5">
                       <Layers className="w-3.5 h-3.5" />
                       Gate 2: Satellite SAR Radar Telemetry
                     </div>
-                    <p className="text-slate-300 text-[11px]">
+                    <p className="text-gov-muted text-[11px]">
                       {pipelineOutput?.closedLoopVerification?.satelliteSarCheck || 'Synthetic Aperture Radar confirms new 2-lane bridge reflection.'}
                     </p>
                   </div>
                 </div>
 
                 {/* Gate 3: Interactive Automated Citizen IVR Call Simulator */}
-                <div className="bg-gradient-to-r from-indigo-950/50 to-slate-950 p-4 rounded-xl border border-indigo-500/40 space-y-3">
+                <div className="bg-gov-navy-soft p-4 rounded-sm border border-gov-navy space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <PhoneCall className={`w-4 h-4 ${callStatus === 'ringing' ? 'text-amber-400 animate-bounce' : 'text-emerald-400'}`} />
-                      <span className="text-xs font-bold text-white">
+                      <PhoneCall className={`w-4 h-4 ${callStatus === 'ringing' ? 'text-gov-teal animate-bounce' : 'text-gov-success'}`} />
+                      <span className="text-xs font-bold text-gov-text">
                         Gate 3: Automated Bhashini IVR Confirmation Call Simulator
                       </span>
                     </div>
@@ -732,7 +756,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                     {callStatus === 'idle' && (
                       <button
                         onClick={handleStartSimulatedCall}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow transition-all cursor-pointer"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-gov-navy hover:bg-gov-teal text-white font-bold text-xs shadow transition-all cursor-pointer"
                       >
                         <PhoneCall className="w-3.5 h-3.5" />
                         Trigger Citizen Callback
@@ -741,26 +765,26 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                   </div>
 
                   {callStatus !== 'idle' && (
-                    <div className="bg-slate-900/90 p-3.5 rounded-xl border border-slate-800 space-y-3 text-xs animate-fadeIn">
+                    <div className="bg-gov-card p-3.5 rounded-sm border border-gov-border space-y-3 text-xs animate-fadeIn">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-400 font-mono">
+                        <span className="text-gov-muted font-mono">
                           Calling Complainant Token: <strong>0x7f9a2b8e...</strong>
                         </span>
                         <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
                           callStatus === 'ringing'
-                            ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            ? 'bg-gov-teal-soft text-gov-teal border border-gov-teal'
                             : callStatus === 'in-progress'
-                            ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                            : 'bg-emerald-500 text-slate-950 font-black'
+                            ? 'bg-emerald-500/20 text-gov-success border border-emerald-500/30'
+                            : 'bg-emerald-500 text-gov-text font-black'
                         }`}>
-                          {callStatus === 'ringing' && '📞 Ringing Complainant Phone...'}
-                          {callStatus === 'in-progress' && '🟢 Call Connected (Bhashini Voice Playing)'}
-                          {callStatus === 'verified' && '✅ Citizen Confirmed (Ticket Closed)'}
+                          {callStatus === 'ringing' && 'Ringing complainant phone...'}
+                          {callStatus === 'in-progress' && 'Call connected (Bhashini voice playing)'}
+                          {callStatus === 'verified' && 'Citizen confirmed (ticket closed)'}
                         </span>
                       </div>
 
                       {/* Synthetic Voice Prompt Text */}
-                      <div className="p-3 rounded-lg bg-slate-950 border border-slate-800 text-slate-200 italic font-mono text-[11px] leading-relaxed">
+                      <div className="p-3 rounded-sm bg-gov-inset border border-gov-border text-gov-text italic font-mono text-[11px] leading-relaxed">
                         {pipelineOutput?.closedLoopVerification?.nativeCallbackPrompt || 
                           'प्रणाम, संवाद सेतु से स्वचालित कॉल। रामपुर पुल निर्माण कार्य पूर्ण हो गया है। क्या गाड़ियाँ सुरक्षित निकल रही हैं? हाँ के लिए 1 दबाएँ, ना के लिए 2 दबाएँ।'}
                       </div>
@@ -768,16 +792,16 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                       {/* Interactive Keypad */}
                       {callStatus === 'in-progress' && (
                         <div className="flex items-center gap-3 pt-1">
-                          <span className="text-[11px] text-slate-400">Simulate Citizen Keypad Press:</span>
+                          <span className="text-[11px] text-gov-muted">Simulate Citizen Keypad Press:</span>
                           <button
                             onClick={() => handlePressKeypad(1)}
-                            className="px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs shadow active:scale-95 transition-all cursor-pointer"
+                            className="px-4 py-1.5 rounded-sm bg-gov-success hover:bg-emerald-500 text-gov-text font-black text-xs shadow active:scale-95 transition-all cursor-pointer"
                           >
                             [1] Yes, Work Completed Safely
                           </button>
                           <button
                             onClick={() => handlePressKeypad(2)}
-                            className="px-4 py-1.5 rounded-lg bg-rose-600/80 hover:bg-rose-600 text-white font-semibold text-xs shadow active:scale-95 transition-all cursor-pointer"
+                            className="px-4 py-1.5 rounded-sm bg-rose-600/80 hover:bg-rose-600 text-gov-text font-semibold text-xs shadow active:scale-95 transition-all cursor-pointer"
                           >
                             [2] No, Bridge Still Incomplete
                           </button>
@@ -785,11 +809,11 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                       )}
 
                       {callStatus === 'verified' && (
-                        <div className="p-2.5 rounded-lg bg-emerald-950/60 border border-emerald-500/50 text-emerald-300 text-[11px] flex items-center justify-between">
+                        <div className="p-2.5 rounded-sm bg-gov-success-bg border border-gov-success text-gov-success text-[11px] flex items-center justify-between">
                           <span>
                             Citizen confirmed physical delivery via DTMF Key [1]. Cryptographic hash logged to public ledger.
                           </span>
-                          <span className="font-mono text-xs font-bold text-amber-300">
+                          <span className="font-mono text-xs font-bold text-gov-teal">
                             Trust Index: 98.4%
                           </span>
                         </div>
@@ -798,14 +822,32 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                   )}
 
                   {/* Public Ledger Hash */}
-                  <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-mono text-slate-400">
+                  <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[10px] font-mono text-gov-muted">
                     <span className="truncate">
                       Public Ledger Hash: {pipelineOutput?.closedLoopVerification?.cryptographicLedgerHash || '0x3c89f1a0e4b7d25e8a6190...d4e8'}
                     </span>
-                    <span className="text-emerald-400 font-bold flex-shrink-0">
+                    <span className="text-gov-success font-bold flex-shrink-0">
                       DPGA Open Standard Verified
                     </span>
                   </div>
+                </div>
+
+                <div className="rounded-sm border border-gov-teal bg-gov-teal-soft p-4 space-y-2">
+                  <p className="text-sm text-gov-navy font-semibold">
+                    This animation is a demo. Save it as a real ticket so an officer can act.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={handleSaveAsRealTicket}
+                    disabled={savingTicket || isSybil}
+                    className="min-h-11 px-4 rounded-sm bg-gov-teal text-white font-black text-sm disabled:opacity-50"
+                  >
+                    {savingTicket ? 'Saving…' : 'Save as real ticket → get tracking ID'}
+                  </button>
+                  {savedTicketId && (
+                    <p className="text-sm font-mono text-gov-success">Saved: {savedTicketId}</p>
+                  )}
+                  {saveError && <p className="text-sm text-gov-error">{saveError}</p>}
                 </div>
               </div>
             )}

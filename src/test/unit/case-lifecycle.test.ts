@@ -25,14 +25,15 @@ describe('Unit Test: Operational Case Lifecycle & Identity Logic', () => {
 
   it('should validate valid sequential state machine transitions', () => {
     const validTransitions: Record<CaseStatus, CaseStatus[]> = {
-      submitted: ['triaged', 'assigned'],
-      triaged: ['assigned', 'in_progress'],
-      assigned: ['in_progress'],
-      in_progress: ['proof_uploaded'],
+      submitted: ['triaged', 'assigned', 'rejected'],
+      triaged: ['assigned', 'rejected'],
+      assigned: ['in_progress', 'proof_uploaded', 'rejected'],
+      in_progress: ['proof_uploaded', 'rejected'],
       proof_uploaded: ['citizen_verified', 'citizen_contested'],
       citizen_verified: ['closed'],
       citizen_contested: ['in_progress', 'assigned'],
       closed: [],
+      rejected: [],
     };
 
     function isValidTransition(from: CaseStatus, to: CaseStatus): boolean {

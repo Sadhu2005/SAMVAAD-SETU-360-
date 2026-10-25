@@ -1,18 +1,5 @@
 import React from 'react';
-import {
-  Download,
-  ShieldCheck,
-  Globe2,
-  Layers,
-  Cpu,
-  Sparkles,
-  FileText,
-  Database,
-  Activity,
-  Award,
-  UserCheck,
-  Building2
-} from 'lucide-react';
+import { Download } from 'lucide-react';
 
 interface HeaderProps {
   activeTab: string;
@@ -21,114 +8,85 @@ interface HeaderProps {
   isExporting: boolean;
 }
 
+const PRODUCT_TABS = [
+  { id: 'citizen-portal', label: 'Citizen' },
+  { id: 'government-desk', label: 'Government' },
+];
+
+const BRIEFING_TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'prototype', label: 'Prototype' },
+  { id: 'edge-cases', label: '10 Edge Cases' },
+  { id: 'fusion', label: 'Big Data Fusion' },
+  { id: 'gatishakti', label: 'GatiShakti GIS' },
+  { id: 'simulator', label: 'Multilingual Voice' },
+  { id: 'impact', label: 'DPI Impact' },
+  { id: 'policymakers', label: 'Policymaker Dossiers' },
+  { id: 'research', label: 'Deep Research' },
+  { id: 'docx-studio', label: 'DOCX Blueprint' },
+];
+
 export const Header: React.FC<HeaderProps> = ({
   activeTab,
   setActiveTab,
   onQuickExportDocx,
   isExporting,
 }) => {
-  const tabs = [
-    { id: 'citizen-portal', label: 'Citizen Track & Verify', icon: UserCheck, badge: 'Live Intake' },
-    { id: 'government-desk', label: 'Govt Action Queue', icon: Building2, badge: 'Official Desk' },
-    { id: 'prototype', label: '🚀 Live Prototype (Solve Now)', icon: Sparkles, badge: 'Interactive' },
-    { id: 'overview', label: '360° Overview', icon: Globe2 },
-    { id: 'edge-cases', label: '10 Edge Cases', icon: ShieldCheck, badge: 'All 360°' },
-    { id: 'fusion', label: 'Big Data Fusion', icon: Database, badge: '4 Datasets' },
-    { id: 'gatishakti', label: 'GatiShakti GIS', icon: Layers, badge: 'India' },
-    { id: 'simulator', label: 'Multilingual Voice', icon: Cpu },
-    { id: 'impact', label: 'DPI Impact Tracker', icon: Activity, badge: 'Verified' },
-    { id: 'policymakers', label: 'Policymaker Dossiers', icon: Award, badge: 'BRICS' },
-    { id: 'research', label: 'Deep Research', icon: Sparkles },
-    { id: 'docx-studio', label: 'DOCX Blueprint', icon: FileText, highlight: true },
-  ];
-
   return (
-    <header className="bg-slate-900 border-b border-slate-800 text-white sticky top-0 z-50 shadow-xl backdrop-blur-md bg-opacity-95">
-      {/* Top Banner - BRICS Theme & DPI Track */}
-      <div className="bg-gradient-to-r from-amber-600 via-emerald-600 to-indigo-700 px-4 py-1.5 text-xs text-white font-medium flex flex-wrap items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <span className="bg-black/30 px-2 py-0.5 rounded font-bold uppercase tracking-wider text-[11px]">
-            BRICS 2026 Innovation
-          </span>
-          <span className="hidden sm:inline">|</span>
-          <span className="font-semibold">Track 1 — AI for Digital Public Infrastructure & Governance</span>
+    <header className="gov-masthead sticky top-0 z-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight">SAMVAAD-SETU 360</h1>
+          <p className="text-sm text-slate-200">Citizen feedback to infrastructure alignment</p>
         </div>
-        <div className="flex items-center space-x-4 text-[11px] opacity-95">
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            DPGA Open Standard
-          </span>
-          <span className="hidden md:inline">• DPDP Act 2023 Compliant</span>
-          <span className="hidden lg:inline">• PM GatiShakti & Bhashini Integrated</span>
-        </div>
+        <button
+          type="button"
+          onClick={onQuickExportDocx}
+          disabled={isExporting}
+          className="hidden sm:inline-flex items-center justify-center gap-2 min-h-11 px-4 rounded-sm font-semibold text-sm bg-gov-teal text-white disabled:opacity-60"
+        >
+          <Download className="w-4 h-4" aria-hidden="true" />
+          {isExporting ? 'Exporting…' : 'Export DOCX'}
+        </button>
       </div>
 
-      {/* Main Header Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 via-indigo-600 to-emerald-500 p-0.5 shadow-lg flex-shrink-0">
-            <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center font-black text-xl text-amber-400">
-              सं
-            </div>
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight bg-gradient-to-r from-white via-slate-100 to-amber-300 bg-clip-text text-transparent">
-                SAMVAAD-SETU 360°
-              </h1>
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
-                संवाद सेतु
-              </span>
-            </div>
-            <p className="text-xs sm:text-sm text-slate-400 font-normal mt-0.5">
-              Multilingual AI Digital Public Good for Citizen Feedback to National Masterplan Alignment
-            </p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          <button
-            onClick={onQuickExportDocx}
-            disabled={isExporting}
-            className="flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md hover:shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
-            title="Download the full comprehensive 360° Blueprint as a Microsoft Word DOCX document"
-          >
-            <Download className="w-4 h-4" />
-            {isExporting ? 'Generating DOCX...' : 'Export DOCX Blueprint'}
-          </button>
-        </div>
-      </div>
-
-      {/* Navigation Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 flex overflow-x-auto no-scrollbar border-t border-slate-800">
-        <nav className="flex space-x-1 py-2">
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 pb-3 space-y-2">
+        <nav className="flex flex-wrap items-center gap-x-4 gap-y-1" aria-label="Product">
+          {PRODUCT_TABS.map((tab, index) => {
+            const active = activeTab === tab.id;
+            return (
+              <React.Fragment key={tab.id}>
+                {index > 0 && <span className="text-slate-400 select-none" aria-hidden="true">|</span>}
+                <button
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`gov-nav-link min-h-11 px-1 text-sm font-semibold bg-transparent ${
+                    active
+                      ? 'text-white underline underline-offset-4 decoration-2'
+                      : 'text-slate-200 hover:text-white hover:underline hover:underline-offset-4'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              </React.Fragment>
+            );
+          })}
+        </nav>
+        <nav className="flex flex-wrap gap-x-4 gap-y-1" aria-label="Briefing">
+          {BRIEFING_TABS.map((tab) => {
+            const active = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium rounded-lg whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? 'bg-indigo-600/30 text-amber-300 border border-indigo-500/40 shadow-sm'
-                    : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                className={`gov-nav-link min-h-11 px-0 text-sm bg-transparent ${
+                  active
+                    ? 'text-white underline underline-offset-4 decoration-2 font-semibold'
+                    : 'text-slate-300 hover:text-white hover:underline hover:underline-offset-4'
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-amber-400' : 'text-slate-400'}`} />
-                <span>{tab.label}</span>
-                {tab.badge && (
-                  <span
-                    className={`text-[9px] px-1.5 py-0.2 rounded font-semibold ${
-                      isActive
-                        ? 'bg-amber-400 text-slate-900'
-                        : 'bg-slate-800 text-slate-300 border border-slate-700'
-                    }`}
-                  >
-                    {tab.badge}
-                  </span>
-                )}
+                {tab.label}
               </button>
             );
           })}

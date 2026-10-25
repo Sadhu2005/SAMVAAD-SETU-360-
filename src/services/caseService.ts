@@ -13,31 +13,23 @@ import {
   addDoc
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
+import {
+  type CaseStatus,
+  type CompletionProof,
+  type OfficerRoleKey,
+  computeSlaDeadlineAt,
+  enforceGovernmentWorkflowGuards,
+  extractPhoneLast4,
+  isSlaBreached,
+  last4Matches,
+  suggestedSchemeForCategory,
+} from '../utils/ticketLogic';
+
+export type { CaseStatus, CompletionProof, OfficerRoleKey };
+export { enforceGovernmentWorkflowGuards, isSlaBreached, last4Matches, suggestedSchemeForCategory };
 
 function canUseFirestore(): boolean {
   return isFirebaseConfigured() && Boolean(db);
-}
-
-export type CaseStatus =
-  | 'submitted'
-  | 'triaged'
-  | 'assigned'
-  | 'in_progress'
-  | 'proof_uploaded'
-  | 'citizen_verified'
-  | 'citizen_contested'
-  | 'closed';
-
-export interface CompletionProof {
-  photoUrl?: string;
-  photoDescription?: string;
-  geoLatitude?: number;
-  geoLongitude?: number;
-  inspectorName?: string;
-  inspectorDesignation?: string;
-  signedOffAt?: string;
-  notes?: string;
-  workOrderCode?: string;
 }
 
 export interface CitizenFeedback {
@@ -52,7 +44,7 @@ export interface AuditLogEntry {
   caseId: string;
   timestamp: string;
   actor: string;
-  role: 'citizen' | 'field_officer' | 'district_admin' | 'nodal_engineer' | 'dpi_engine';
+  role: 'citizen' | 'field_officer' | 'district_admin' | 'nodal_engineer' | 'dpi_engine' | 'collector';
   action: string;
   details: string;
   previousStatus?: CaseStatus;
@@ -85,6 +77,17 @@ export interface CitizenCase {
   citizenFeedback?: CitizenFeedback;
   gatiShaktiAssetId?: string;
   cadastralParcel?: string;
+  village?: string;
+  lat?: number;
+  lng?: number;
+  language?: string;
+  voiceUrl?: string;
+  photoUrl?: string;
+  phoneLast4?: string;
+  suggestedScheme?: string;
+  slaDeadlineAt?: string;
+  rejectedReason?: string;
+  closeOverrideReason?: string;
 }
 
 // Generate durable public tracking ID format: SETU-2026-ST-DIS-XXXX
@@ -96,9 +99,8 @@ export function generateTrackingId(state: string, district: string): string {
 }
 
 // DPDP 2023 Ephemeral Tokenizer
-export function generateDpdpToken(contact: string): { maskedContact: string; dpdpToken: string } {
-  const clean = contact.replace(/\D/g, '');
-  const last4 = clean.length >= 4 ? clean.slice(-4) : 'XXXX';
+export function generateDpdpToken(contact: string): { maskedContact: string; dpdpToken: string; last4: string } {
+  const last4 = extractPhoneLast4(contact);
   const maskedContact = `+91 ******${last4}`;
   
   let hash = 0;
@@ -107,7 +109,7 @@ export function generateDpdpToken(contact: string): { maskedContact: string; dpd
     hash |= 0;
   }
   const dpdpToken = `0x${Math.abs(hash).toString(16).padStart(8, '0')}...${last4}`;
-  return { maskedContact, dpdpToken };
+  return { maskedContact, dpdpToken, last4 };
 }
 
 // Local mock store for test environments or offline connectivity
@@ -141,6 +143,12 @@ export function seedDefaultCases() {
       updatedAt: new Date(Date.now() - 12 * 3600 * 1000).toISOString(),
       gatiShaktiAssetId: 'GATI-CG-BST-BR-4190',
       cadastralParcel: 'Survey of India #314/B',
+      village: 'Rampur',
+      phoneLast4: '3210',
+      suggestedScheme: 'PMGSY Batch IV / 15th FC untied grant',
+      slaDeadlineAt: computeSlaDeadlineAt(new Date(Date.now() - 36 * 3600 * 1000).toISOString(), 72),
+      lat: 19.074,
+      lng: 81.956,
     };
     localCasesMap.set(defaultCase.trackingId, defaultCase);
 
@@ -193,10 +201,18 @@ export async function submitCitizenCase(params: {
   channel?: CitizenCase['channel'];
   urgency?: CitizenCase['urgency'];
   dipsScore?: number;
+  village?: string;
+  lat?: number;
+  lng?: number;
+  language?: string;
+  voiceUrl?: string;
+  photoUrl?: string;
+  suggestedScheme?: string;
 }): Promise<CitizenCase> {
   const trackingId = generateTrackingId(params.state, params.district);
-  const { maskedContact, dpdpToken } = generateDpdpToken(params.contactNumber);
+  const { maskedContact, dpdpToken, last4 } = generateDpdpToken(params.contactNumber);
   const now = new Date().toISOString();
+  const slaDeadlineHours = params.urgency === 'Critical' ? 48 : 72;
 
   const newCase: CitizenCase = {
     id: `case-${Date.now()}`,
@@ -210,13 +226,22 @@ export async function submitCitizenCase(params: {
     state: params.state,
     spokenDialect: params.spokenDialect || 'Hindi / Vernacular',
     channel: params.channel || 'Web Citizen Portal',
-    urgency: params.urgency || 'High',
+    urgency: params.urgency === 'Critical' || params.urgency === 'Low' || params.urgency === 'Medium' ? params.urgency : 'High',
     status: 'submitted',
     dipsScore: params.dipsScore || 88.5,
     mpiDeficitMultiplier: '5.2x (Multidimensional Poverty Multiplier)',
-    slaDeadlineHours: params.urgency === 'Critical' ? 48 : 72,
+    slaDeadlineHours,
     createdAt: now,
     updatedAt: now,
+    village: params.village,
+    lat: params.lat,
+    lng: params.lng,
+    language: params.language || params.spokenDialect || 'Hindi',
+    voiceUrl: params.voiceUrl,
+    photoUrl: params.photoUrl,
+    phoneLast4: last4,
+    suggestedScheme: params.suggestedScheme || suggestedSchemeForCategory(params.category),
+    slaDeadlineAt: computeSlaDeadlineAt(now, slaDeadlineHours),
   };
 
   // 1. Try Firebase Firestore
@@ -323,9 +348,22 @@ export async function updateCaseByOfficer(params: {
   officerPhone?: string;
   remarks: string;
   completionProof?: CompletionProof;
+  closeOverrideReason?: string;
+  officerRoleKey?: OfficerRoleKey;
 }): Promise<CitizenCase> {
   const { caseData } = await getCaseByTrackingId(params.trackingId);
   if (!caseData) throw new Error(`Case ${params.trackingId} not found`);
+
+  const guard = enforceGovernmentWorkflowGuards({
+    currentStatus: caseData.status,
+    targetStatus: params.status,
+    proof: params.completionProof,
+    closeOverrideReason: params.closeOverrideReason,
+    officerRoleKey: params.officerRoleKey,
+  });
+  if (!guard.allowed) {
+    throw new Error(guard.reason || 'Workflow guard rejected this action');
+  }
 
   const prevStatus = caseData.status;
   const now = new Date().toISOString();
@@ -336,6 +374,8 @@ export async function updateCaseByOfficer(params: {
   if (params.assignedOfficer) caseData.assignedOfficer = params.assignedOfficer;
   if (params.officerPhone) caseData.officerPhone = params.officerPhone;
   if (params.completionProof) caseData.completionProof = params.completionProof;
+  if (params.closeOverrideReason) caseData.closeOverrideReason = params.closeOverrideReason;
+  if (params.status === 'rejected') caseData.rejectedReason = params.remarks;
 
   // 1. Try Firestore
   try {
@@ -382,9 +422,13 @@ export async function citizenVerifyResolution(params: {
   verified: boolean;
   satisfactionRating?: number;
   feedbackText?: string;
+  last4?: string;
 }): Promise<CitizenCase> {
   const { caseData } = await getCaseByTrackingId(params.trackingId);
   if (!caseData) throw new Error(`Case ${params.trackingId} not found`);
+  if (params.last4 && caseData.phoneLast4 && !last4Matches(caseData.phoneLast4, params.last4)) {
+    throw new Error('Phone last-4 does not match this ticket');
+  }
 
   const now = new Date().toISOString();
   const newStatus: CaseStatus = params.verified ? 'citizen_verified' : 'citizen_contested';
@@ -431,4 +475,53 @@ export async function citizenVerifyResolution(params: {
   localAuditLogsMap.set(params.trackingId, logs);
 
   return caseData;
+}
+
+export async function appendCaseNote(params: {
+  trackingId: string;
+  actor: string;
+  role: AuditLogEntry['role'];
+  details: string;
+}): Promise<CitizenCase> {
+  const { caseData } = await getCaseByTrackingId(params.trackingId);
+  if (!caseData) throw new Error(`Case ${params.trackingId} not found`);
+  const now = new Date().toISOString();
+  caseData.updatedAt = now;
+  const entry: AuditLogEntry = {
+    caseId: params.trackingId,
+    timestamp: now,
+    actor: params.actor,
+    role: params.role,
+    action: 'Request more information',
+    details: params.details,
+    previousStatus: caseData.status,
+    newStatus: caseData.status,
+  };
+  try {
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    await updateDoc(doc(db!, 'cases', params.trackingId), { updatedAt: now });
+    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), entry);
+  } catch (err) {
+    console.warn('Firestore note fallback:', err);
+  }
+  const logs = localAuditLogsMap.get(params.trackingId) || [];
+  logs.push(entry);
+  localAuditLogsMap.set(params.trackingId, logs);
+  localCasesMap.set(params.trackingId, caseData);
+  return caseData;
+}
+
+export function filterOfficerInbox(
+  cases: CitizenCase[],
+  filters: { district?: string; urgency?: string; department?: string; slaBreach?: boolean }
+): CitizenCase[] {
+  return cases.filter((c) => {
+    if (filters.district && c.district.toLowerCase() !== filters.district.toLowerCase()) return false;
+    if (filters.urgency && c.urgency !== filters.urgency) return false;
+    if (filters.department && !(c.assignedDept || '').toLowerCase().includes(filters.department.toLowerCase())) {
+      return false;
+    }
+    if (filters.slaBreach && !isSlaBreached(c.createdAt, c.slaDeadlineHours)) return false;
+    return true;
+  });
 }

@@ -1,6 +1,7 @@
 /**
  * Firebase web client config from Vite env (never commit real keys).
  * Copy .env.example → .env and set VITE_FIREBASE_* values.
+ * Safe on Node (tsx server.ts): import.meta.env is undefined, so process.env is used.
  */
 export interface FirebaseClientConfig {
   apiKey: string;
@@ -13,9 +14,23 @@ export interface FirebaseClientConfig {
   firestoreDatabaseId?: string;
 }
 
+function env(name: string): string | undefined {
+  try {
+    const viteVal = import.meta.env?.[name];
+    if (typeof viteVal === 'string' && viteVal.trim()) return viteVal.trim();
+  } catch {
+    // import.meta.env is unavailable outside Vite
+  }
+  if (typeof process !== 'undefined' && process.env) {
+    const nodeVal = process.env[name];
+    if (typeof nodeVal === 'string' && nodeVal.trim()) return nodeVal.trim();
+  }
+  return undefined;
+}
+
 export function readFirebaseClientConfig(): FirebaseClientConfig | null {
-  const apiKey = import.meta.env.VITE_FIREBASE_API_KEY?.trim();
-  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID?.trim();
+  const apiKey = env('VITE_FIREBASE_API_KEY');
+  const projectId = env('VITE_FIREBASE_PROJECT_ID');
 
   if (!apiKey || !projectId) {
     return null;
@@ -23,14 +38,13 @@ export function readFirebaseClientConfig(): FirebaseClientConfig | null {
 
   return {
     apiKey,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN?.trim() || `${projectId}.firebaseapp.com`,
+    authDomain: env('VITE_FIREBASE_AUTH_DOMAIN') || `${projectId}.firebaseapp.com`,
     projectId,
-    storageBucket:
-      import.meta.env.VITE_FIREBASE_STORAGE_BUCKET?.trim() || `${projectId}.firebasestorage.app`,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID?.trim() || '',
-    appId: import.meta.env.VITE_FIREBASE_APP_ID?.trim() || '',
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID?.trim() || undefined,
-    firestoreDatabaseId: import.meta.env.VITE_FIREBASE_FIRESTORE_DATABASE_ID?.trim() || undefined,
+    storageBucket: env('VITE_FIREBASE_STORAGE_BUCKET') || `${projectId}.firebasestorage.app`,
+    messagingSenderId: env('VITE_FIREBASE_MESSAGING_SENDER_ID') || '',
+    appId: env('VITE_FIREBASE_APP_ID') || '',
+    measurementId: env('VITE_FIREBASE_MEASUREMENT_ID') || undefined,
+    firestoreDatabaseId: env('VITE_FIREBASE_FIRESTORE_DATABASE_ID') || undefined,
   };
 }
 

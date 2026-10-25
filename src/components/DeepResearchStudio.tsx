@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Sparkles,
   Search,
   BookOpen,
   Send,
@@ -8,7 +7,6 @@ import {
   Copy,
   Check,
   FileText,
-  Globe2,
   Building2,
   ExternalLink
 } from 'lucide-react';
@@ -91,15 +89,14 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* Header Banner */}
-      <div className="bg-slate-900 text-white p-6 sm:p-8 rounded-2xl border border-slate-800 shadow-xl space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/30">
-          <Sparkles className="w-3.5 h-3.5" />
+      <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gov-navy-soft text-gov-navy border border-gov-navy">
           Powered by Gemini 3.8 Flash
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
           Deep Research & Policy Synthesis Studio
         </h2>
-        <p className="text-sm text-slate-300 max-w-4xl leading-relaxed">
+        <p className="text-sm text-gov-muted max-w-4xl leading-relaxed">
           Formulate grounded policy research queries combining India's Digital Public Infrastructure, 
           Bhashini language models, PM GatiShakti geospatial analytics, and BRICS New Development Bank (NDB) financing structures.
         </p>
@@ -114,9 +111,9 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
                 setCustomQuery(p.query);
                 handleRunResearch(p.topic, p.query);
               }}
-              className="px-3 py-2 rounded-xl text-xs font-semibold whitespace-nowrap bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition-all flex items-center gap-2 cursor-pointer"
+              className="px-3 py-2 rounded-sm text-xs font-semibold whitespace-nowrap bg-gov-inset hover:bg-gov-navy-soft text-gov-muted hover:text-gov-text border border-gov-border transition-all flex items-center gap-2 cursor-pointer"
             >
-              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+              <BookOpen className="w-3.5 h-3.5 text-gov-teal" />
               <span>{p.title}</span>
             </button>
           ))}
@@ -124,14 +121,14 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
       </div>
 
       {/* Query Formulation Form */}
-      <div className="bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-xl space-y-4">
+      <div className="bg-gov-card p-6 rounded-sm border border-gov-border  space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div>
-            <label className="text-xs font-semibold text-slate-400">Target Jurisdiction / Nation</label>
+            <label className="text-xs font-semibold text-gov-muted">Target Jurisdiction / Nation</label>
             <select
               value={targetCountry}
               onChange={(e) => setTargetCountry(e.target.value)}
-              className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full mt-1 bg-gov-inset border border-gov-border rounded-sm px-3 py-2 text-xs text-gov-text focus:outline-none focus:border-gov-navy"
             >
               <option value="India">India (PM GatiShakti & Bhashini)</option>
               <option value="Brazil">Brazil (Amazonia & Favelas / PIX)</option>
@@ -144,48 +141,48 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-400">Regional / State Corridor</label>
+            <label className="text-xs font-semibold text-gov-muted">Regional / State Corridor</label>
             <input
               type="text"
               value={targetState}
               onChange={(e) => setTargetState(e.target.value)}
               placeholder="e.g. Bastar, Vidarbha, Kalahandi..."
-              className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full mt-1 bg-gov-inset border border-gov-border rounded-sm px-3 py-2 text-xs text-gov-text focus:outline-none focus:border-gov-navy"
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-400">Core Subject Focus</label>
+            <label className="text-xs font-semibold text-gov-muted">Core Subject Focus</label>
             <input
               type="text"
               value={selectedTopic}
               onChange={(e) => setSelectedTopic(e.target.value)}
               placeholder="e.g. Edge Case Analysis, Budget Alignment..."
-              className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-indigo-500"
+              className="w-full mt-1 bg-gov-inset border border-gov-border rounded-sm px-3 py-2 text-xs text-gov-text focus:outline-none focus:border-gov-navy"
             />
           </div>
         </div>
 
         <div>
-          <label className="text-xs font-semibold text-slate-400">Custom Deep Research Inquiry</label>
+          <label className="text-xs font-semibold text-gov-muted">Custom Deep Research Inquiry</label>
           <textarea
             rows={3}
             value={customQuery}
             onChange={(e) => setCustomQuery(e.target.value)}
             placeholder="Type your specific research question (e.g. How does the Bhashini IndicConformer handle acoustic tractor noise when farmers report flood damage?)..."
-            className="w-full mt-1 bg-slate-800 border border-slate-700 rounded-xl p-3 text-xs text-white focus:outline-none focus:border-indigo-500"
+            className="w-full mt-1 bg-gov-inset border border-gov-border rounded-sm p-3 text-xs text-gov-text focus:outline-none focus:border-gov-navy"
           />
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
-          <div className="text-xs text-slate-400">
+          <div className="text-xs text-gov-muted">
             Grounds responses in official government schemas, NITI Aayog indicators, and DPGA requirements.
           </div>
 
           <button
             onClick={() => handleRunResearch()}
             disabled={isLoading}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 text-white shadow-lg shadow-indigo-600/25 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+            className="flex items-center justify-center gap-2 min-h-11 px-6 py-2.5 rounded-sm font-bold text-xs sm:text-sm bg-gov-teal text-white disabled:opacity-50 cursor-pointer"
           >
             {isLoading ? (
               <>
@@ -194,7 +191,6 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4 text-amber-300" />
                 Execute Deep Research
               </>
             )}
@@ -204,15 +200,15 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
 
       {/* Research Output Panel */}
       {researchResult && (
-        <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden animate-fadeIn">
+        <div className="bg-gov-card rounded-sm border border-gov-border  overflow-hidden animate-fadeIn">
           {/* Output Action Bar */}
-          <div className="bg-slate-800/80 px-6 py-3 border-b border-slate-700 flex flex-wrap items-center justify-between gap-3">
+          <div className="bg-gov-inset px-6 py-3 border-b border-gov-border flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4 text-emerald-400" />
-              <span className="text-xs font-bold text-white uppercase tracking-wider">
+              <BookOpen className="w-4 h-4 text-gov-success" />
+              <span className="text-xs font-bold text-gov-text uppercase tracking-wider">
                 Grounded Research Memorandum
               </span>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-gov-success font-mono">
                 Grounded: PM GatiShakti & Bhashini
               </span>
             </div>
@@ -220,15 +216,15 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
             <div className="flex items-center gap-2">
               <button
                 onClick={handleCopy}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-slate-700 hover:bg-slate-600 text-slate-200 transition-all cursor-pointer"
+                className="flex items-center justify-center gap-1.5 min-h-11 px-3 py-1.5 rounded-sm text-xs bg-gov-navy-soft hover:bg-gov-teal-soft text-gov-text cursor-pointer"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                {copied ? <Check className="w-3.5 h-3.5 text-gov-success" /> : <Copy className="w-3.5 h-3.5" />}
                 {copied ? 'Copied!' : 'Copy Memorandum'}
               </button>
 
               <button
                 onClick={onExportDocx}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-amber-500 hover:bg-amber-400 text-slate-950 font-semibold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs bg-gov-teal hover:bg-gov-teal text-gov-text font-semibold transition-all cursor-pointer"
               >
                 <FileText className="w-3.5 h-3.5" />
                 Export in DOCX
@@ -237,7 +233,7 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
           </div>
 
           {/* Research Content */}
-          <div className="p-6 sm:p-8 prose prose-invert prose-indigo max-w-none text-xs sm:text-sm text-slate-300 leading-relaxed font-sans whitespace-pre-line">
+          <div className="p-6 sm:p-8 prose prose-invert prose-indigo max-w-none text-xs sm:text-sm text-gov-muted leading-relaxed font-sans whitespace-pre-line">
             {researchResult}
           </div>
         </div>

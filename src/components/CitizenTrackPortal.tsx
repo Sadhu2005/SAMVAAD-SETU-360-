@@ -1,660 +1,425 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Search,
-  CheckCircle2,
-  Clock,
-  AlertTriangle,
-  ShieldCheck,
   Send,
-  Building2,
-  UserCheck,
+  Mic,
+  Square,
   Camera,
   MapPin,
-  RefreshCw,
   ThumbsUp,
   ThumbsDown,
-  ArrowRight,
-  ExternalLink,
-  PhoneCall
+  Copy,
+  CheckCircle2,
 } from 'lucide-react';
-import {
-  CitizenCase,
-  AuditLogEntry,
-  getCaseByTrackingId,
-  submitCitizenCase,
-  citizenVerifyResolution,
-  getAllCases
-} from '../services/caseService';
-import confetti from 'canvas-confetti';
+import type { AuditLogEntry, CitizenCase } from '../services/caseService';
+import { apiSubmitTicket, apiTrackTicket, apiVerifyTicket } from '../services/ticketApi';
+import { fileToDataUrl, uploadTicketMedia } from '../services/mediaUpload';
+import { CITIZEN_STATUS_LABEL, type CaseStatus } from '../utils/ticketLogic';
 
-export const CitizenTrackPortal: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'track' | 'submit'>('track');
-  const [trackingInput, setTrackingInput] = useState<string>('SETU-2026-CG-BST-4190');
+interface CitizenTrackPortalProps {
+  initialTrackingId?: string;
+}
+
+const CATEGORIES: CitizenCase['category'][] = [
+  'Bridges & Culverts',
+  'Piped Drinking Water',
+  'Rural Roads & Connectivity',
+  'Healthcare Sub-Center',
+  'Power & Electrification',
+  'Sanitation & Drainage',
+];
+
+export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialTrackingId }) => {
+  const [screen, setScreen] = useState<'submit' | 'track'>(initialTrackingId ? 'track' : 'submit');
+  const [trackingId, setTrackingId] = useState(initialTrackingId || '');
+  const [last4, setLast4] = useState('');
   const [currentCase, setCurrentCase] = useState<CitizenCase | null>(null);
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-  const [recentCases, setRecentCases] = useState<CitizenCase[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [newId, setNewId] = useState<string | null>(null);
 
-  // Submission Form State
-  const [formData, setFormData] = useState({
-    title: '',
-    category: 'Bridges & Culverts' as CitizenCase['category'],
-    district: 'Bastar',
-    state: 'Chhattisgarh',
-    contactNumber: '9876543210',
-    spokenDialect: 'Bhojpuri / Bundeli',
-    channel: 'Web Citizen Portal' as CitizenCase['channel'],
-    urgency: 'Critical' as CitizenCase['urgency'],
-    description: '',
-  });
-  const [submitting, setSubmitting] = useState<boolean>(false);
-  const [newlyCreatedId, setNewlyCreatedId] = useState<string | null>(null);
-
-  // Citizen Verification Form State
-  const [feedbackRating, setFeedbackRating] = useState<number>(5);
-  const [feedbackNotes, setFeedbackNotes] = useState<string>('');
-  const [verifying, setVerifying] = useState<boolean>(false);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [village, setVillage] = useState('');
+  const [district, setDistrict] = useState('');
+  const [stateName, setStateName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [category, setCategory] = useState<CitizenCase['category']>('Bridges & Culverts');
+  const [submitting, setSubmitting] = useState(false);
+  const [photoData, setPhotoData] = useState<string>('');
+  const [voiceData, setVoiceData] = useState<string>('');
+  const [recording, setRecording] = useState(false);
+  const mediaRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [lat, setLat] = useState<number | undefined>();
+  const [lng, setLng] = useState<number | undefined>();
+  const [verifying, setVerifying] = useState(false);
 
   useEffect(() => {
-    loadRecentCases();
-    handleSearchCase('SETU-2026-CG-BST-4190');
-  }, []);
-
-  const loadRecentCases = async () => {
-    try {
-      const list = await getAllCases();
-      setRecentCases(list.slice(0, 5));
-    } catch (e) {
-      console.error('Failed to load cases:', e);
+    if (initialTrackingId) {
+      setTrackingId(initialTrackingId);
+      setScreen('track');
     }
+  }, [initialTrackingId]);
+
+  const shareUrl = (id: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set('view', 'citizen');
+    url.searchParams.set('id', id);
+    return url.toString();
   };
 
-  const handleSearchCase = async (idToSearch?: string) => {
-    const searchId = idToSearch || trackingInput;
-    if (!searchId.trim()) return;
-    setLoading(true);
-    try {
-      const res = await getCaseByTrackingId(searchId);
-      if (res.caseData) {
-        setCurrentCase(res.caseData);
-        setAuditLogs(res.auditLogs);
-      } else {
-        setCurrentCase(null);
-        setAuditLogs([]);
-      }
-    } catch (err) {
-      console.error('Error fetching case:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSubmitNewNeed = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.description) return;
+    setError(null);
+    if (!title.trim() || !description.trim() || !district.trim() || !stateName.trim() || !phone.trim()) {
+      setError('Please fill title, description, district, state, and phone.');
+      return;
+    }
     setSubmitting(true);
     try {
-      const newCase = await submitCitizenCase({
-        title: formData.title,
-        description: formData.description,
-        category: formData.category,
-        district: formData.district,
-        state: formData.state,
-        contactNumber: formData.contactNumber,
-        spokenDialect: formData.spokenDialect,
-        channel: formData.channel,
-        urgency: formData.urgency,
+      const created = await apiSubmitTicket({
+        title: title.trim(),
+        description: description.trim(),
+        category,
+        district: district.trim(),
+        state: stateName.trim(),
+        village: village.trim(),
+        contactNumber: phone.trim(),
+        channel: 'Web Citizen Portal',
+        spokenDialect: 'Hindi / Vernacular',
+        lat,
+        lng,
       });
-
-      confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-      setNewlyCreatedId(newCase.trackingId);
-      setTrackingInput(newCase.trackingId);
-      setCurrentCase(newCase);
-      await loadRecentCases();
-      await handleSearchCase(newCase.trackingId);
-      setActiveSubTab('track');
-    } catch (err) {
-      console.error('Error submitting case:', err);
+      let voiceUrl = voiceData;
+      let photoUrl = photoData;
+      if (voiceData) voiceUrl = await uploadTicketMedia(created.trackingId, 'voice', voiceData);
+      if (photoData) photoUrl = await uploadTicketMedia(created.trackingId, 'photo', photoData);
+      if (voiceUrl || photoUrl) {
+        // Second write via same submit fields is already stored; keep URLs client-side if API did not accept media on first pass
+      }
+      setNewId(created.trackingId);
+      setTrackingId(created.trackingId);
+      setLast4(phone.replace(/\D/g, '').slice(-4));
+      setCurrentCase({ ...created.case, voiceUrl, photoUrl });
+      setScreen('track');
+      await handleTrack(created.trackingId, phone.replace(/\D/g, '').slice(-4));
+    } catch (err: any) {
+      setError(err.message || 'Could not submit');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleCitizenSignOff = async (verified: boolean) => {
+  const handleTrack = async (id = trackingId, digits = last4) => {
+    if (!id.trim()) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await apiTrackTicket(id.trim(), digits.trim() || undefined);
+      setCurrentCase(res.case);
+      setAuditLogs(res.auditLogs);
+      if (!res.case) setError('Ticket not found');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const startRecording = async () => {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const rec = new MediaRecorder(stream);
+    chunksRef.current = [];
+    rec.ondataavailable = (ev) => {
+      if (ev.data.size) chunksRef.current.push(ev.data);
+    };
+    rec.onstop = async () => {
+      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onload = () => setVoiceData(String(reader.result || ''));
+      reader.readAsDataURL(blob);
+      stream.getTracks().forEach((t) => t.stop());
+    };
+    mediaRef.current = rec;
+    rec.start();
+    setRecording(true);
+  };
+
+  const stopRecording = () => {
+    mediaRef.current?.stop();
+    setRecording(false);
+  };
+
+  const onPhoto = async (file?: File) => {
+    if (!file) return;
+    setPhotoData(await fileToDataUrl(file));
+  };
+
+  const useMyLocation = () => {
+    navigator.geolocation?.getCurrentPosition((pos) => {
+      setLat(pos.coords.latitude);
+      setLng(pos.coords.longitude);
+    });
+  };
+
+  const handleVerify = async (yes: boolean) => {
     if (!currentCase) return;
     setVerifying(true);
+    setError(null);
     try {
-      const updated = await citizenVerifyResolution({
-        trackingId: currentCase.trackingId,
-        verified,
-        satisfactionRating: feedbackRating,
-        feedbackText: feedbackNotes || (verified ? 'Citizen confirmed on-ground resolution.' : 'Citizen escalated: problem remains unresolved.'),
-      });
+      const updated = await apiVerifyTicket(
+        currentCase.trackingId,
+        last4,
+        yes,
+        yes ? 'Citizen confirmed the work is done.' : 'Citizen says the problem remains.'
+      );
       setCurrentCase(updated);
-      confetti({ particleCount: verified ? 80 : 30, spread: 60 });
-      await handleSearchCase(currentCase.trackingId);
-      await loadRecentCases();
-    } catch (err) {
-      console.error('Verification error:', err);
+      await handleTrack(currentCase.trackingId, last4);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setVerifying(false);
     }
   };
 
-  // Status Stepper helpers
-  const steps: { key: CitizenCase['status']; label: string }[] = [
-    { key: 'submitted', label: '1. Ingested' },
-    { key: 'triaged', label: '2. Triaged & Scored' },
-    { key: 'assigned', label: '3. Assigned' },
-    { key: 'in_progress', label: '4. Work Ongoing' },
-    { key: 'proof_uploaded', label: '5. Proof Uploaded' },
-    { key: 'citizen_verified', label: '6. Citizen Verified' },
-  ];
-
-  const getStepIndex = (status: CitizenCase['status']) => {
-    switch (status) {
-      case 'submitted': return 0;
-      case 'triaged': return 1;
-      case 'assigned': return 2;
-      case 'in_progress': return 3;
-      case 'proof_uploaded': return 4;
-      case 'citizen_verified':
-      case 'closed': return 5;
-      case 'citizen_contested': return 4;
-      default: return 0;
-    }
-  };
-
-  const currentStepIdx = currentCase ? getStepIndex(currentCase.status) : 0;
+  const status = (currentCase?.status || 'submitted') as CaseStatus;
+  const canConfirm = currentCase?.status === 'proof_uploaded';
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-      {/* Top Banner */}
-      <div className="bg-gradient-to-r from-emerald-950 via-slate-900 to-indigo-950 border border-emerald-500/30 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs px-2.5 py-1 rounded-full font-semibold flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Live Citizen Case Intake & Verification
-              </span>
-              <span className="text-xs text-slate-400">• DPDP Act 2023 Masked</span>
-            </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Citizen Tracking & Public Accountability Portal
-            </h1>
-            <p className="text-sm text-slate-300 mt-1 max-w-2xl">
-              File a real infrastructure development need, receive an immutable <code className="text-amber-400 font-mono">SETU-2026-XX-XXXX</code> public tracking ID, follow government action live, and inspect official site proofs.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setActiveSubTab('track')}
-              className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${
-                activeSubTab === 'track'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-900/50'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <Search className="w-4 h-4" />
-              Track Case by ID
-            </button>
-            <button
-              onClick={() => setActiveSubTab('submit')}
-              className={`px-4 py-2.5 rounded-xl font-semibold text-sm transition-all flex items-center gap-2 ${
-                activeSubTab === 'submit'
-                  ? 'bg-amber-600 text-white shadow-lg shadow-amber-900/50'
-                  : 'bg-slate-800 text-slate-300 hover:bg-slate-700'
-              }`}
-            >
-              <Send className="w-4 h-4" />
-              Raise New Need
-            </button>
-          </div>
-        </div>
+    <div className="max-w-lg mx-auto space-y-5 pb-24">
+      <div className="space-y-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gov-teal">Citizen</p>
+        <h2 className="text-2xl sm:text-3xl font-black text-gov-text leading-tight">
+          My Voice / My Ticket
+        </h2>
+        <p className="text-sm text-gov-muted">
+          File a need. Get a public ID. Track it. Confirm when work is done. No login.
+        </p>
       </div>
 
-      {newlyCreatedId && (
-        <div className="bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-4 flex items-center justify-between animate-fadeIn">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0" />
-            <div>
-              <p className="text-sm font-semibold text-white">Your Development Request Has Been Registered!</p>
-              <p className="text-xs text-emerald-200">
-                Tracking Reference: <span className="font-mono font-bold text-amber-300">{newlyCreatedId}</span> (Saved to open public ledger)
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => setNewlyCreatedId(null)}
-            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-1.5 rounded-lg"
-          >
-            Dismiss
-          </button>
-        </div>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={() => setScreen('submit')}
+          className={`min-h-11 rounded-sm font-bold text-sm ${
+            screen === 'submit' ? 'bg-gov-teal text-white' : 'bg-gov-inset text-gov-text border border-gov-border'
+          }`}
+        >
+          Raise a need
+        </button>
+        <button
+          type="button"
+          onClick={() => setScreen('track')}
+          className={`min-h-11 rounded-sm font-bold text-sm ${
+            screen === 'track' ? 'bg-gov-teal text-white' : 'bg-gov-inset text-gov-text border border-gov-border'
+          }`}
+        >
+          Track ticket
+        </button>
+      </div>
+
+      {error && (
+        <div className="rounded-sm border border-gov-error bg-gov-error-bg px-3 py-2 text-sm text-gov-error">{error}</div>
       )}
 
-      {/* Main Content Area */}
-      {activeSubTab === 'track' ? (
-        <div className="space-y-6">
-          {/* Search Box */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-6 shadow-lg">
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              <div className="relative flex-1 w-full">
-                <Search className="w-5 h-5 text-slate-400 absolute left-3.5 top-3.5" />
-                <input
-                  type="text"
-                  value={trackingInput}
-                  onChange={(e) => setTrackingInput(e.target.value)}
-                  placeholder="Enter Tracking Reference e.g. SETU-2026-CG-BST-4190"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl pl-11 pr-4 py-3 text-white font-mono placeholder:text-slate-500 text-sm focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-              <button
-                onClick={() => handleSearchCase()}
-                disabled={loading}
-                className="w-full sm:w-auto px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
-              >
-                {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-                Track Request
-              </button>
-            </div>
-
-            {/* Quick Chips of Recent Cases */}
-            {recentCases.length > 0 && (
-              <div className="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center gap-2">
-                <span className="text-xs text-slate-400 font-medium">Recent Public Requests:</span>
-                {recentCases.map((rc) => (
-                  <button
-                    key={rc.trackingId}
-                    onClick={() => {
-                      setTrackingInput(rc.trackingId);
-                      handleSearchCase(rc.trackingId);
-                    }}
-                    className="text-xs font-mono bg-slate-950 hover:bg-slate-800 text-emerald-400 border border-slate-800 px-2.5 py-1 rounded-md transition-colors"
-                  >
-                    {rc.trackingId}
-                  </button>
-                ))}
-              </div>
-            )}
+      {screen === 'submit' && (
+        <form onSubmit={handleSubmit} className="space-y-4 bg-gov-card border border-gov-border rounded-sm p-4">
+          <label className="block space-y-1">
+            <span className="text-sm font-semibold text-gov-text">What is broken?</span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
+              placeholder="e.g. Culvert washed away"
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-semibold text-gov-text">Describe in your words</span>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              rows={4}
+              className="w-full rounded-sm bg-gov-inset border border-gov-border px-3 py-2 text-gov-text"
+            />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-semibold text-gov-text">Category</span>
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value as CitizenCase['category'])}
+              className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
+            >
+              {CATEGORIES.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block space-y-1">
+              <span className="text-sm font-semibold text-gov-text">Village</span>
+              <input value={village} onChange={(e) => setVillage(e.target.value)} className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text" />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-semibold text-gov-text">District</span>
+              <input value={district} onChange={(e) => setDistrict(e.target.value)} className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text" required />
+            </label>
           </div>
+          <label className="block space-y-1">
+            <span className="text-sm font-semibold text-gov-text">State</span>
+            <input value={stateName} onChange={(e) => setStateName(e.target.value)} className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text" required />
+          </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-semibold text-gov-text">Mobile (hashed, last 4 used to track)</span>
+            <input
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              inputMode="tel"
+              className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
+              required
+            />
+          </label>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={useMyLocation} className="min-h-11 px-3 rounded-sm bg-gov-inset border border-gov-border text-sm flex items-center gap-2">
+              <MapPin className="w-4 h-4" /> Use my location
+            </button>
+            <label className="min-h-11 px-3 rounded-sm bg-gov-inset border border-gov-border text-sm flex items-center gap-2 cursor-pointer">
+              <Camera className="w-4 h-4" /> Photo
+              <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => onPhoto(e.target.files?.[0])} />
+            </label>
+            <button
+              type="button"
+              onClick={recording ? stopRecording : startRecording}
+              className="min-h-11 px-3 rounded-sm bg-gov-inset border border-gov-border text-sm flex items-center gap-2"
+            >
+              {recording ? <Square className="w-4 h-4 text-gov-error" /> : <Mic className="w-4 h-4" />}
+              {recording ? 'Stop voice' : 'Voice note'}
+            </button>
+          </div>
+          {(photoData || voiceData || lat) && (
+            <p className="text-xs text-gov-success">
+              {photoData && 'Photo attached. '}
+              {voiceData && 'Voice attached. '}
+              {lat && lng && `Pin ${lat.toFixed(3)}, ${lng.toFixed(3)}`}
+            </p>
+          )}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="w-full min-h-12 rounded-sm bg-gov-teal text-white font-black flex items-center justify-center gap-2 disabled:opacity-50"
+          >
+            <Send className="w-4 h-4" />
+            {submitting ? 'Saving…' : 'Submit and get tracking ID'}
+          </button>
+        </form>
+      )}
 
-          {/* Case Detail Card */}
-          {currentCase ? (
-            <div className="space-y-6">
-              {/* Status Header */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                      <span className="font-mono text-xs font-bold text-amber-400 bg-amber-400/10 px-2.5 py-0.5 rounded border border-amber-400/20">
-                        {currentCase.trackingId}
-                      </span>
-                      <span className="text-xs bg-slate-800 text-slate-300 px-2.5 py-0.5 rounded">
-                        {currentCase.category}
-                      </span>
-                      <span className={`text-xs px-2.5 py-0.5 rounded font-bold uppercase ${
-                        currentCase.urgency === 'Critical' ? 'bg-rose-500/20 text-rose-300' : 'bg-amber-500/20 text-amber-300'
-                      }`}>
-                        {currentCase.urgency} Urgency
-                      </span>
-                    </div>
-                    <h2 className="text-xl sm:text-2xl font-bold text-white">{currentCase.title}</h2>
-                    <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
-                      <MapPin className="w-3.5 h-3.5 text-slate-400" />
-                      {currentCase.district}, {currentCase.state} • Channel: {currentCase.channel} • Dialect: {currentCase.spokenDialect}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col sm:items-end">
-                    <div className="text-xs text-slate-400">Current Lifecycle Status</div>
-                    <div className="text-base font-bold text-emerald-400 uppercase tracking-wide flex items-center gap-1.5 mt-0.5">
-                      <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                      {currentCase.status.replace(/_/g, ' ')}
-                    </div>
-                    <div className="text-xs text-slate-400 mt-1 font-mono">
-                      Filed: {new Date(currentCase.createdAt).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Stepper */}
-                <div className="py-6">
-                  <div className="text-xs font-semibold text-slate-400 mb-3 uppercase tracking-wider">
-                    Statutory Progress Stepper
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                    {steps.map((st, i) => {
-                      const isCompleted = i <= currentStepIdx;
-                      const isCurrent = i === currentStepIdx;
-                      return (
-                        <div
-                          key={st.key}
-                          className={`p-3 rounded-xl border text-center transition-all ${
-                            isCompleted
-                              ? 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300'
-                              : 'bg-slate-950/50 border-slate-800 text-slate-500'
-                          } ${isCurrent ? 'ring-2 ring-emerald-400' : ''}`}
-                        >
-                          <div className="text-xs font-bold">{st.label}</div>
-                          <div className="text-[10px] mt-1 opacity-80">
-                            {isCompleted ? '✓ Completed' : 'Pending'}
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                {/* Key Officers & Department Assignment */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-slate-800">
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-                      <Building2 className="w-3.5 h-3.5 text-indigo-400" />
-                      Responsible Department
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {currentCase.assignedDept || 'Pending Administrative Routing'}
-                    </div>
-                  </div>
-
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-                      <UserCheck className="w-3.5 h-3.5 text-amber-400" />
-                      Nodal Field Engineer
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {currentCase.assignedOfficer || 'Awaiting Officer Desk Claim'}
-                    </div>
-                    {currentCase.officerPhone && (
-                      <div className="text-xs text-slate-400 font-mono mt-0.5">{currentCase.officerPhone}</div>
-                    )}
-                  </div>
-
-                  <div className="bg-slate-950 p-4 rounded-xl border border-slate-800">
-                    <div className="text-xs text-slate-400 flex items-center gap-1.5 mb-1">
-                      <Clock className="w-3.5 h-3.5 text-rose-400" />
-                      Statutory SLA Deadline
-                    </div>
-                    <div className="text-sm font-semibold text-white">
-                      {currentCase.slaDeadlineHours} Hours Statutory SLA
-                    </div>
-                    <div className="text-xs text-emerald-400 font-medium mt-0.5">Escalation Threshold Active</div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Citizen Closed-Loop Resolution Proof Card */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2">
-                    <Camera className="w-5 h-5 text-amber-400" />
-                    <h3 className="text-lg font-bold text-white">On-Ground Resolution Proof & Verification</h3>
-                  </div>
-                  <span className="text-xs bg-slate-800 text-slate-300 px-3 py-1 rounded-full font-mono">
-                    DPGA Verified Asset
-                  </span>
-                </div>
-
-                {currentCase.completionProof ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {currentCase.completionProof.photoUrl ? (
-                        <div className="rounded-xl overflow-hidden border border-slate-700 bg-slate-950">
-                          <img
-                            src={currentCase.completionProof.photoUrl}
-                            alt="Resolution site inspection proof"
-                            className="w-full h-48 object-cover"
-                          />
-                        </div>
-                      ) : (
-                        <div className="h-48 rounded-xl bg-slate-950 border border-dashed border-slate-700 flex flex-col items-center justify-center text-slate-400 p-4 text-center">
-                          <Camera className="w-8 h-8 text-slate-500 mb-2" />
-                          <p className="text-xs font-semibold text-white">Site Inspection Photographic Evidence</p>
-                          <p className="text-[11px] text-slate-500 mt-1">
-                            GPS Geo-tagged (Lat: 19.0742° N, Long: 81.9563° E)
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="bg-slate-950 p-4 rounded-xl border border-slate-800 space-y-2 text-xs">
-                        <div className="font-semibold text-white text-sm">Official Completion Sign-off</div>
-                        <p className="text-slate-300">{currentCase.completionProof.notes || 'Engineering work order verified with structural load testing.'}</p>
-                        <div className="pt-2 border-t border-slate-800/80 space-y-1 text-slate-400">
-                          <div>Inspector: <span className="text-white font-medium">{currentCase.completionProof.inspectorName || 'Er. Rajeshwar Verma'}</span></div>
-                          <div>Designation: <span className="text-white font-medium">{currentCase.completionProof.inspectorDesignation || 'Executive Engineer (PWD)'}</span></div>
-                          <div>Work Order: <span className="text-amber-400 font-mono font-medium">{currentCase.completionProof.workOrderCode || 'UJWO-2026-CG-8821'}</span></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Citizen Action Confirmation */}
-                    <div className="bg-gradient-to-r from-indigo-950/60 to-emerald-950/60 border border-indigo-500/30 rounded-xl p-5">
-                      <h4 className="text-sm font-bold text-white mb-1">
-                        Citizen Confirmation Required: Did this fix your problem?
-                      </h4>
-                      <p className="text-xs text-slate-300 mb-4">
-                        Government funds are held in escrow until you verify whether this bridge/facility is now functioning safely.
-                      </p>
-
-                      {currentCase.status === 'citizen_verified' ? (
-                        <div className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg p-3 text-xs font-semibold flex items-center gap-2">
-                          <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                          You verified this resolution on {new Date(currentCase.citizenFeedback?.verifiedAt || Date.now()).toLocaleDateString()}. Thank you!
-                        </div>
-                      ) : (
-                        <div className="flex flex-wrap items-center gap-3">
-                          <button
-                            onClick={() => handleCitizenSignOff(true)}
-                            disabled={verifying}
-                            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center gap-2"
-                          >
-                            <ThumbsUp className="w-4 h-4" />
-                            Yes, Problem is Resolved
-                          </button>
-                          <button
-                            onClick={() => handleCitizenSignOff(false)}
-                            disabled={verifying}
-                            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs transition-all shadow-md flex items-center gap-2"
-                          >
-                            <ThumbsDown className="w-4 h-4" />
-                            No, Still Broken / Escalate
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="text-xs text-slate-400 bg-slate-950 p-4 rounded-xl border border-slate-800 flex items-center gap-3">
-                    <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
-                    <div>
-                      <p className="text-white font-medium">Work is in progress by {currentCase.assignedDept || 'the district administration'}.</p>
-                      <p className="text-slate-400 mt-0.5">
-                        Once the field engineer completes construction and uploads site photographs, this section will activate for your confirmation.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Audit Trail Ledger */}
-              <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-indigo-400" />
-                    Immutable DPG Audit Log
-                  </h3>
-                  <span className="text-xs text-slate-500 font-mono">
-                    {auditLogs.length} Chronological Entries
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {auditLogs.map((log, index) => (
-                    <div
-                      key={index}
-                      className="bg-slate-950 p-3.5 rounded-xl border border-slate-800/80 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2"
-                    >
-                      <div className="space-y-0.5">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-white">{log.action}</span>
-                          <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded">
-                            {log.role}
-                          </span>
-                        </div>
-                        <p className="text-slate-300">{log.details}</p>
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-mono whitespace-nowrap">
-                        {new Date(log.timestamp).toLocaleString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-12 text-center text-slate-400">
-              <AlertTriangle className="w-10 h-10 text-amber-500 mx-auto mb-3" />
-              <h3 className="text-base font-bold text-white">No Case Found for &quot;{trackingInput}&quot;</h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-md mx-auto">
-                Check the tracking ID or select one of the recent cases listed above to view live progress.
-              </p>
+      {screen === 'track' && (
+        <div className="space-y-4">
+          {newId && (
+            <div className="rounded-sm border border-gov-success bg-gov-success-bg p-4 space-y-2">
+              <p className="text-xs uppercase font-bold text-gov-success">Your tracking ID</p>
+              <p className="text-xl font-black text-gov-text break-all">{newId}</p>
+              <button
+                type="button"
+                className="min-h-11 px-3 rounded-sm bg-gov-inset text-sm flex items-center gap-2"
+                onClick={() => {
+                  navigator.clipboard.writeText(shareUrl(newId));
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
+              >
+                {copied ? <CheckCircle2 className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                Copy track link
+              </button>
             </div>
           )}
-        </div>
-      ) : (
-        /* Submission Form */
-        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-xl max-w-3xl mx-auto">
-          <div className="mb-6">
-            <h2 className="text-xl sm:text-2xl font-bold text-white">File a Citizen Infrastructure Need</h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Your submission will be immediately assigned a public tracking ID and routed to the district nodal engineer.
-            </p>
+
+          <div className="bg-gov-card border border-gov-border rounded-sm p-4 space-y-3">
+            <label className="block space-y-1">
+              <span className="text-sm font-semibold text-gov-text">Ticket ID</span>
+              <input
+                value={trackingId}
+                onChange={(e) => setTrackingId(e.target.value)}
+                className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text font-mono"
+                placeholder="SETU-2026-…"
+              />
+            </label>
+            <label className="block space-y-1">
+              <span className="text-sm font-semibold text-gov-text">Last 4 digits of phone</span>
+              <input
+                value={last4}
+                onChange={(e) => setLast4(e.target.value)}
+                maxLength={4}
+                inputMode="numeric"
+                className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => handleTrack()}
+              disabled={loading}
+              className="w-full min-h-12 rounded-sm bg-gov-navy text-gov-text font-bold flex items-center justify-center gap-2"
+            >
+              <Search className="w-4 h-4" />
+              {loading ? 'Looking up…' : 'Show my ticket'}
+            </button>
           </div>
 
-          <form onSubmit={handleSubmitNewNeed} className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Development Issue Title *
-              </label>
-              <input
-                type="text"
-                required
-                value={formData.title}
-                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="e.g. Scoured Bridge Culvert Cut Off 14 Tribal Habitations"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Infrastructure Category *</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value as any })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
-                >
-                  <option value="Bridges & Culverts">Bridges & Culverts</option>
-                  <option value="Piped Drinking Water">Piped Drinking Water</option>
-                  <option value="Rural Roads & Connectivity">Rural Roads & Connectivity</option>
-                  <option value="Healthcare Sub-Center">Healthcare Sub-Center</option>
-                  <option value="Power & Electrification">Power & Electrification</option>
-                  <option value="Sanitation & Drainage">Sanitation & Drainage</option>
-                </select>
+          {currentCase && (
+            <div className="bg-gov-card border border-gov-border rounded-sm p-4 space-y-3">
+              <p className="text-xs font-mono text-gov-teal">{currentCase.trackingId}</p>
+              <h3 className="text-lg font-black text-gov-text">{currentCase.title}</h3>
+              <p className="text-sm text-gov-muted">{currentCase.description}</p>
+              <div className="inline-flex min-h-10 items-center px-3 rounded-full bg-gov-teal-soft text-gov-navy text-sm font-bold border border-gov-teal">
+                {CITIZEN_STATUS_LABEL[status]}
               </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Urgency Priority *</label>
-                <select
-                  value={formData.urgency}
-                  onChange={(e) => setFormData({ ...formData, urgency: e.target.value as any })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
-                >
-                  <option value="Critical">Critical (Immediate Hazard - 48hr SLA)</option>
-                  <option value="High">High (Seasonal Disruptions - 72hr SLA)</option>
-                  <option value="Medium">Medium (Routine Deficit)</option>
-                  <option value="Low">Low (Long-term Expansion)</option>
-                </select>
-              </div>
+              <p className="text-xs text-gov-muted">
+                {currentCase.village ? `${currentCase.village}, ` : ''}
+                {currentCase.district}, {currentCase.state}
+              </p>
+              {currentCase.completionProof?.photoUrl && (
+                <img src={currentCase.completionProof.photoUrl} alt="Officer proof" className="rounded-sm max-h-56 w-full object-cover" />
+              )}
+              {canConfirm && (
+                <div className="space-y-2 pt-2">
+                  <p className="text-sm font-semibold text-gov-text">Did the work get done?</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      disabled={verifying}
+                      onClick={() => handleVerify(true)}
+                      className="min-h-12 rounded-sm bg-gov-success text-white font-bold flex items-center justify-center gap-2"
+                    >
+                      <ThumbsUp className="w-4 h-4" /> Yes
+                    </button>
+                    <button
+                      type="button"
+                      disabled={verifying}
+                      onClick={() => handleVerify(false)}
+                      className="min-h-12 rounded-sm bg-gov-error text-gov-text font-bold flex items-center justify-center gap-2"
+                    >
+                      <ThumbsDown className="w-4 h-4" /> No
+                    </button>
+                  </div>
+                </div>
+              )}
+              {auditLogs.length > 0 && (
+                <ol className="space-y-2 text-xs text-gov-muted border-t border-gov-border pt-3">
+                  {auditLogs.map((log, i) => (
+                    <li key={`${log.timestamp}-${i}`}>
+                      <span className="text-gov-muted">{new Date(log.timestamp).toLocaleString()}</span>
+                      {' — '}
+                      <span className="text-gov-text">{log.action}</span>
+                      {log.details && log.details !== log.action ? `: ${log.details}` : ''}
+                    </li>
+                  ))}
+                </ol>
+              )}
             </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">District *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.district}
-                  onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">State *</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.state}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Citizen Contact (DPDP Masked) *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.contactNumber}
-                  onChange={(e) => setFormData({ ...formData, contactNumber: e.target.value })}
-                  placeholder="e.g. 9876543210"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
-                />
-                <span className="text-[10px] text-slate-400 mt-0.5 block">Stored as ephemeral one-way hash</span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 mb-1">Spoken Dialect</label>
-                <input
-                  type="text"
-                  value={formData.spokenDialect}
-                  onChange={(e) => setFormData({ ...formData, spokenDialect: e.target.value })}
-                  placeholder="e.g. Bundeli / Bhojpuri / Gondi"
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Detailed Description *</label>
-              <textarea
-                required
-                rows={4}
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Describe the physical condition, location landmarks, and community impact..."
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-amber-500"
-              />
-            </div>
-
-            <div className="pt-2">
-              <button
-                type="submit"
-                disabled={submitting}
-                className="w-full py-3.5 bg-amber-600 hover:bg-amber-500 text-slate-950 font-bold rounded-xl text-sm transition-all shadow-lg flex items-center justify-center gap-2"
-              >
-                {submitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                Submit Development Request & Generate Tracking ID
-              </button>
-            </div>
-          </form>
+          )}
         </div>
       )}
     </div>

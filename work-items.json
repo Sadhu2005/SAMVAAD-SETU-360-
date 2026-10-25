@@ -64,7 +64,9 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": false,
-      "depends_on": ["GOV-001"],
+      "depends_on": [
+        "GOV-001"
+      ],
       "source": {
         "path": "vitest.config.ts",
         "section": "Test Runner Configuration"
@@ -104,7 +106,9 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": false,
-      "depends_on": ["GOV-001"],
+      "depends_on": [
+        "GOV-001"
+      ],
       "source": {
         "path": "server.ts",
         "section": "API v1 Router"
@@ -143,7 +147,10 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": false,
-      "depends_on": ["GOV-001", "GOV-002"],
+      "depends_on": [
+        "GOV-001",
+        "GOV-002"
+      ],
       "source": {
         "path": "src/components/LiveResolutionPrototype.tsx",
         "section": "Stage 1 Ingestion"
@@ -174,7 +181,9 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": false,
-      "depends_on": ["DPI-001"],
+      "depends_on": [
+        "DPI-001"
+      ],
       "source": {
         "path": "src/components/GatiShaktiMapHub.tsx",
         "section": "Cadastral Fusion"
@@ -205,7 +214,9 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": false,
-      "depends_on": ["DPI-002"],
+      "depends_on": [
+        "DPI-002"
+      ],
       "source": {
         "path": "src/test/unit/dips-scoring.test.ts",
         "section": "DIPS Algorithm"
@@ -235,7 +246,9 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": false,
-      "depends_on": ["DPI-003"],
+      "depends_on": [
+        "DPI-003"
+      ],
       "source": {
         "path": "src/components/DpiImpactTracker.tsx",
         "section": "Closed-Loop Audit"
@@ -265,7 +278,15 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": true,
-      "depends_on": ["GOV-001", "GOV-002", "GOV-003", "DPI-001", "DPI-002", "DPI-003", "DPI-004"],
+      "depends_on": [
+        "GOV-001",
+        "GOV-002",
+        "GOV-003",
+        "DPI-001",
+        "DPI-002",
+        "DPI-003",
+        "DPI-004"
+      ],
       "source": {
         "path": "docs/gap-inventory/operational-capabilities.md",
         "section": "Operational Capabilities Plan"
@@ -318,7 +339,9 @@
       "approval": "approved_local",
       "status": "local_verified",
       "auto_start": false,
-      "depends_on": ["FEAT-001"],
+      "depends_on": [
+        "FEAT-001"
+      ],
       "source": {
         "path": "docs/security/firebase-key-rotation.md",
         "section": "Leak response"
@@ -348,6 +371,123 @@
           "at": "2026-10-25T07:00:00.000Z",
           "session_id": "cursor-agent-fix-001",
           "evidence": "Removed tracked firebase-applet-config.json; env-based Firebase client; .env created locally; rotation runbook added."
+        }
+      ]
+    },
+    {
+      "id": "FEAT-002",
+      "order": 10,
+      "title": "Real citizen + government ticket loop (mobile citizen, officer desk)",
+      "summary": "Restyle Citizen and Government as operational product screens: submit/track/verify, officer PIN+roles, Firestore guards, ticket API aliases.",
+      "phase": "Operational Capabilities",
+      "owner": "full-stack",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-001",
+        "FIX-001"
+      ],
+      "source": {
+        "path": "docs/security/firestore-ticket-rules.md",
+        "section": "Real ticket loop"
+      },
+      "scope": {
+        "write_globs": [
+          "src/components/**",
+          "src/services/**",
+          "src/utils/**",
+          "src/config/**",
+          "src/test/**",
+          "src/App.tsx",
+          "server.ts",
+          "work-items.json",
+          ".env.example",
+          "docs/security/**",
+          "package.json"
+        ]
+      },
+      "acceptance": [
+        "Citizen can submit text/voice/photo and receive SETU-2026 tracking ID without login.",
+        "Citizen tracks with ticket ID + last 4 digits; public list of all cases is removed.",
+        "Officer desk requires role + PIN; filters include SLA breach; cannot close without citizen OK or collector override.",
+        "Ticket API aliases under /api/v1/tickets and /api/v1/officer/inbox.",
+        "Live Prototype can save pipeline output as a real ticket.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.3.0-real-ticket-loop.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T08:18:05.483Z",
+          "session_id": "cursor-agent-feat-002",
+          "evidence": "Claimed work item FEAT-002 with active write scopes: src/components/**, src/services/**, src/utils/**, src/config/**, src/test/**, src/App.tsx, server.ts, work-items.json, .env.example, docs/security/**"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T08:23:13.734Z",
+          "session_id": "agent-session-verified",
+          "evidence": "30/30 tests passed; citizen/officer product screens, ticket APIs, workflow guards, Live Prototype save-as-ticket."
+        }
+      ]
+    },
+    {
+      "id": "FEAT-003",
+      "order": 11,
+      "title": "Light civic government UI (navy + teal, no emoji)",
+      "summary": "Restyle the app and README as a light official civic portal: off-white pages, navy masthead, teal actions, white cards, no emoji or decorative AI icons.",
+      "phase": "Presentation",
+      "owner": "frontend",
+      "priority": "P1",
+      "risk_tier": 1,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-002"
+      ],
+      "source": {
+        "path": "src/index.css",
+        "section": "Civic design tokens"
+      },
+      "scope": {
+        "write_globs": [
+          "src/index.css",
+          "src/App.tsx",
+          "src/components/**",
+          "src/test/**",
+          "README.md",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "App opens light (off-white page, navy header, teal primary actions).",
+        "Citizen and Government screens use white cards with labelled fields.",
+        "Zero emoji in running UI and README headings.",
+        "Skip link, visible focus rings, and 44px minimum tap targets.",
+        "All 4 test tiers pass with 0 errors."
+      ],
+      "next_action": "Implement on feature/v1.4.0-light-civic-ui.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T08:36:01.311Z",
+          "session_id": "cursor-agent-feat-003",
+          "evidence": "Claimed work item FEAT-003 with active write scopes: src/index.css, src/App.tsx, src/components/**, src/test/**, README.md, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T08:38:58.071Z",
+          "session_id": "agent-session-verified",
+          "evidence": "Light civic UI: navy+teal tokens, skip link, white cards, no emoji in UI/README headings. npm run test:all — 38/38 tests, 0 type errors."
         }
       ]
     }

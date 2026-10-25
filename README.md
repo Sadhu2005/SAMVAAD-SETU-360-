@@ -10,14 +10,14 @@
 
 ---
 
-### 🌐 Live Interactive Resolution Prototype
+### Live Interactive Resolution Prototype
 **Direct URL**: [https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/](https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/)
 
 Experience real-time Bhashini speech de-noising, contractor cartel anti-astroturfing defense, PM GatiShakti 1,400+ layer GIS triangulation, DIPS mathematical equity scoring, automatic Central Scheme DPR budget allocation, and closed-loop native IVR voice verification.
 
 ---
 
-## 📌 Executive Summary
+## Executive Summary
 
 Governments globally struggle to consolidate citizen feedback and align it with national infrastructure priorities. Development requests live in fragmented, disconnected silos (e.g. CP-GRAMS, state helplines, WhatsApp groups), leading to:
 1. **Misaligned Public Spending**: Multi-billion dollar capital budgets dictated by administrative momentum rather than verified grassroots need.
@@ -28,7 +28,7 @@ Governments globally struggle to consolidate citizen feedback and align it with 
 
 ---
 
-## 🏗️ End-to-End System Architecture
+## End-to-End System Architecture
 
 ```mermaid
 graph TD
@@ -104,7 +104,7 @@ graph TD
 
 ---
 
-## 🏛️ Architectural ASCII Flow
+## Architectural ASCII Flow
 
 ```
 +-------------------------------------------------------------------------------------------------------+
@@ -164,7 +164,7 @@ graph TD
 
 ---
 
-## 🛡️ The 360° Edge Case Matrix: 10 Critical Failure Modes
+## The 360° Edge Case Matrix: 10 Critical Failure Modes
 
 | ID | Edge Case | Grounded Real-World Scenario | Traditional Portal Failure | Samvaad-Setu 360° AI / DPI Mitigation | BRICS Reusability |
 |---|---|---|---|---|---|
@@ -181,7 +181,7 @@ graph TD
 
 ---
 
-## 📐 Mathematical Formulation
+## Mathematical Formulation
 
 ### Dynamic Infrastructure Priority Score (DIPS)
 $$\text{DIPS} = w_1 \cdot (V_{\text{cluster}} \cdot \text{DIEW}) + w_2 \cdot G_{\text{infra}} + w_3 \cdot S_{\text{gatishakti}} + w_4 \cdot R_{\text{urgency}} - P_{\text{sybil}}$$
@@ -196,7 +196,7 @@ $$\text{DIPS} = w_1 \cdot (V_{\text{cluster}} \cdot \text{DIEW}) + w_2 \cdot G_{
 
 ---
 
-## 🇮🇳 Grounded Indian Case Studies
+## Grounded Indian Case Studies
 
 | District & State | Archetype | Deficit / MPI | Citizen Feedback Hotspot | Recommended High-Priority Capital Project | Funding Scheme Alignment |
 |---|---|---|---|---|---|
@@ -209,7 +209,7 @@ $$\text{DIPS} = w_1 \cdot (V_{\text{cluster}} \cdot \text{DIEW}) + w_2 \cdot G_{
 
 ---
 
-## 📊 Big Data 4-Way Fusion & Fiscal Misalignment Calculator
+## Big Data 4-Way Fusion & Fiscal Misalignment Calculator
 
 To resolve the multi-billion dollar disconnect where public funds are captured by administrative inertia and contractor cartels, the platform fuses **4 disparate national big datasets**:
 1. **Citizen Feedback Streams**: Aggregated voice, text, WhatsApp, and IVR requests in 22+ languages via Bhashini.
@@ -228,7 +228,7 @@ To resolve the multi-billion dollar disconnect where public funds are captured b
 
 ---
 
-## 📈 Measuring DPI Impact: Pre vs Post Verified Outcomes
+## Measuring DPI Impact: Pre vs Post Verified Outcomes
 
 | DPI Impact Indicator | Pre-DPI Status Quo Baseline | Post-DPI Grounded Outcome | Delta Improvement | Authoritative Verification Method |
 |---|---|---|---|---|
@@ -240,20 +240,20 @@ To resolve the multi-billion dollar disconnect where public funds are captured b
 
 ---
 
-## 🌍 Bankable Project Dossiers for BRICS National Policymakers
+## Bankable Project Dossiers for BRICS National Policymakers
 
 | Nation | Corridor | Project Name | Capex (USD / INR) | EIRR (%) | Beneficiaries | NDB Blended Finance Window |
 |---|---|---|---|---|---|---|
-| 🇮🇳 **India** | Bastar Tribal Belt (Chhattisgarh) | Bastar Tribal Clean Energy & River Crossing Mission | $10.2M (₹84.6 Cr) | 18.4% | 320,000 citizens | NDB Sustainable Infrastructure Facility |
-| 🇮🇳 **India** | Mewat Aspirational Corridor (Haryana) | Mewat Canal Tail-End & Hospital Outpost | $17.1M (₹142.0 Cr) | 21.2% | 540,000 citizens | NDB Water Resource & Urban Health Program |
-| 🇧🇷 **Brazil** | Amazonas Interior (Manaus-Tefé) | Amazonian Fluvial Logistics & Telemedicine Network | $14.2M (₹118.0 Cr) | 17.6% | 210,000 ribeirinhos | NDB Amazon Bioeconomy & River Transport Fund |
-| 🇿🇦 **South Africa** | Gauteng-Ekurhuleni Township Belt | Township Water Pressure Ring-Main & Mains Retrofit | $16.3M (₹135.0 Cr) | 22.8% | 680,000 residents | NDB Urban Upgrading & Municipal Resilience Facility |
-| 🇷🇺 **Russia** | Yamal & Siberian Corridors | Permafrost Thermopile Cooling & Arctic Clean Heating | $19.9M (₹165.0 Cr) | 16.5% | 140,000 residents | NDB Arctic Climate Resilience & Technology Window |
-| 🇪🇬🇪🇹 **Egypt & Ethiopia** | Upper Nile & Rift Valley Basin | Nile Basin Drip Irrigation & Solar Pumping Cooperative | $18.3M (₹152.0 Cr) | 24.1% | 850,000 families | NDB Africa Food Security & Regional Integration |
+| **India** | Bastar Tribal Belt (Chhattisgarh) | Bastar Tribal Clean Energy & River Crossing Mission | $10.2M (₹84.6 Cr) | 18.4% | 320,000 citizens | NDB Sustainable Infrastructure Facility |
+| **India** | Mewat Aspirational Corridor (Haryana) | Mewat Canal Tail-End & Hospital Outpost | $17.1M (₹142.0 Cr) | 21.2% | 540,000 citizens | NDB Water Resource & Urban Health Program |
+| **Brazil** | Amazonas Interior (Manaus-Tefé) | Amazonian Fluvial Logistics & Telemedicine Network | $14.2M (₹118.0 Cr) | 17.6% | 210,000 ribeirinhos | NDB Amazon Bioeconomy & River Transport Fund |
+| **South Africa** | Gauteng-Ekurhuleni Township Belt | Township Water Pressure Ring-Main & Mains Retrofit | $16.3M (₹135.0 Cr) | 22.8% | 680,000 residents | NDB Urban Upgrading & Municipal Resilience Facility |
+| **Russia** | Yamal & Siberian Corridors | Permafrost Thermopile Cooling & Arctic Clean Heating | $19.9M (₹165.0 Cr) | 16.5% | 140,000 residents | NDB Arctic Climate Resilience & Technology Window |
+| **Egypt & Ethiopia** | Upper Nile & Rift Valley Basin | Nile Basin Drip Irrigation & Solar Pumping Cooperative | $18.3M (₹152.0 Cr) | 24.1% | 850,000 families | NDB Africa Food Security & Regional Integration |
 
 ---
 
-## 📄 1-Click DOCX Blueprint Generator
+## 1-Click DOCX Blueprint Generator
 
 The repository includes a dedicated Microsoft Word (`.docx`) publishing engine built using `docx` and `file-saver`. It produces a formal, publication-ready policy memorandum containing:
 - Formal Cover Page with BRICS Innovation Track 1 credentials.
@@ -266,7 +266,7 @@ The repository includes a dedicated Microsoft Word (`.docx`) publishing engine b
 
 ---
 
-## 🚀 Quickstart & Installation
+## Quickstart & Installation
 
 ### Prerequisites
 - Node.js 20+
@@ -281,16 +281,15 @@ npm install
 ```
 
 ### Environment Configuration
-Create a `.env` file in the root directory (see `.env.example` for all keys):
-```env
-GEMINI_API_KEY="your-gemini-api-key"
-PORT=3000
+Copy `.env.example` to `.env` and fill secrets locally. **Firebase project:** `samvaad-setu-360` (GCP `507246172982`).
 
-# Citizen/officer Firestore sync (optional — local case store works without these)
-VITE_FIREBASE_API_KEY="your-firebase-web-api-key"
-VITE_FIREBASE_PROJECT_ID="your-project-id"
-# ...other VITE_FIREBASE_* from Firebase Console
-```
+You must paste from Firebase Console → Project settings → Your web app:
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_APP_ID`
+
+Optional server key: `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey).
+
+For **AI Studio / Cloud Run**, set the same variables in the Secrets panel (use production `APP_URL` in `.env.example`). For **local dev**, use `APP_URL=http://localhost:3000`.
 
 Do **not** commit `firebase-applet-config.json` or real API keys. If a key was ever pushed to GitHub, rotate it in Google Cloud and follow [docs/security/firebase-key-rotation.md](docs/security/firebase-key-rotation.md).
 
@@ -308,7 +307,7 @@ npm start
 
 ---
 
-## 📜 Digital Public Goods Standard Compliance
+## Digital Public Goods Standard Compliance
 
 | DPG Standard Indicator | Implementation in Samvaad-Setu 360° |
 |---|---|
@@ -322,7 +321,7 @@ npm start
 
 ---
 
-## 🤝 Contributing & License
+## Contributing & License
 - **License**: Apache-2.0
 - **Track**: BRICS Track 1 — AI for Digital Public Infrastructure & Governance
 - **Anchor**: India DPI (Bhashini, PM GatiShakti, DigiLocker, CP-GRAMS)
