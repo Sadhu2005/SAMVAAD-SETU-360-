@@ -287,7 +287,7 @@ You must paste from Firebase Console → Project settings → Your web app:
 - `VITE_FIREBASE_API_KEY`
 - `VITE_FIREBASE_APP_ID`
 
-Optional server key: `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey).
+Optional server key: `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). When set, the Officer Command Desk can request **AI assist (optional)** suggestions via `POST /api/v1/gemini/desk-assist` (server-side only; officers still confirm every action). Check `GET /api/v1/health` for `geminiReady`. Optional: `GEMINI_MODEL`, `GEMINI_ENABLED`.
 
 For **AI Studio / Cloud Run**, set the same variables in the Secrets panel (use production `APP_URL` in `.env.example`). For **local dev**, use `APP_URL=http://localhost:3000`.
 

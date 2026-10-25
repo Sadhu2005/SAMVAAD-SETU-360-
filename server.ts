@@ -4,7 +4,6 @@ import express, { Request, Response } from 'express';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { GoogleGenAI } from '@google/genai';
 import {
   submitCitizenCase,
   getCaseByTrackingId,
@@ -15,6 +14,14 @@ import {
   filterOfficerInbox,
   appendCaseNote,
 } from './src/services/caseService';
+import { computeDeskAssist } from './src/services/deskAssistService';
+import {
+  geminiConfig,
+  geminiModelId,
+  generateGeminiJson,
+  generateGeminiText,
+  isGeminiReady,
+} from './src/services/geminiClient';
 import { last4Matches, maskCaseForPublic } from './src/utils/ticketLogic';
 import { getDistrictsFromStore, getStatesFromStore } from './src/services/geoService';
 
@@ -25,17 +32,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json({ limit: '10mb' }));
-
-// Initialize Gemini Client
-const apiKey = process.env.GEMINI_API_KEY;
-let aiClient: GoogleGenAI | null = null;
-if (apiKey) {
-  try {
-    aiClient = new GoogleGenAI({ apiKey });
-  } catch (err) {
-    console.warn('Failed to initialize GoogleGenAI with key:', err);
-  }
-}
 
 // Version 1 API Router
 const v1Router = express.Router();
@@ -75,6 +71,7 @@ v1Router.get('/meta', (_req: Request, res: Response) => {
       { path: '/api/v1/gemini/deep-research', method: 'POST', description: 'Execute DPI deep policy research' },
       { path: '/api/v1/gemini/solve-edge-case', method: 'POST', description: 'Mitigate governance edge cases' },
       { path: '/api/v1/gemini/solve-pipeline', method: 'POST', description: 'End-to-end 6-stage DPI resolution pipeline' },
+      { path: '/api/v1/gemini/desk-assist', method: 'POST', description: 'Officer desk AI assist (summary, department, remarks draft)' },
     ]
   });
 });
@@ -104,11 +101,15 @@ v1Router.get('/geo/districts', async (req: Request, res: Response) => {
 });
 
 v1Router.get('/health', (_req: Request, res: Response) => {
+  const cfg = geminiConfig();
   res.json({
     status: 'ok',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
-    hasGeminiKey: Boolean(apiKey),
+    hasGeminiKey: Boolean(cfg.apiKey),
+    geminiEnabled: cfg.enabled,
+    geminiModel: geminiModelId(),
+    geminiReady: isGeminiReady(),
     platform: 'SamvaadSetu 360 DPI Engine'
   });
 });
@@ -134,16 +135,10 @@ Provide an exhaustive, high-level policy and technical deep research memorandum 
 
 Respond in detailed, authoritative markdown with data-driven points, specific scheme names (e.g. PMGSY, Jal Jeevan Mission, AMRUT 2.0, Bharatmala, Beckn Protocol, DPDP Act 2023), and rigorous logic.`;
 
-  if (aiClient) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-      });
-      return res.json({ result: response.text, source: 'gemini-3.8-flash' });
-    } catch (error: any) {
-      console.error('Gemini API Error:', error);
-      // Fallback gracefully to high-yield analytical engine if API call fails
+  if (isGeminiReady()) {
+    const text = await generateGeminiText(prompt);
+    if (text) {
+      return res.json({ result: text, source: geminiModelId() });
     }
   }
 
@@ -201,15 +196,10 @@ Provide a comprehensive, bulletproof 360-degree engineering and governance solut
 4. Fail-Safe / Human-in-the-Loop Fallback
 5. Policy Recommendation for National/BRICS DPI Standards.`;
 
-  if (aiClient) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-      });
-      return res.json({ solution: response.text, source: 'gemini-3.8-flash' });
-    } catch (error: any) {
-      console.error('Gemini Edge Case Solver Error:', error);
+  if (isGeminiReady()) {
+    const text = await generateGeminiText(prompt);
+    if (text) {
+      return res.json({ solution: text, source: geminiModelId() });
     }
   }
 
@@ -277,19 +267,10 @@ Execute the complete 6-stage AI DPI resolution pipeline and output a structured 
 
 Respond ONLY with valid JSON with these exact keys.`;
 
-  if (aiClient) {
-    try {
-      const response = await aiClient.models.generateContent({
-        model: 'gemini-3.8-flash',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-        }
-      });
-      const parsed = JSON.parse(response.text || '{}');
-      return res.json({ success: true, pipeline: parsed, source: 'gemini-3.8-flash' });
-    } catch (error: any) {
-      console.error('Gemini Solve Pipeline Error:', error);
+  if (isGeminiReady()) {
+    const parsed = await generateGeminiJson<Record<string, unknown>>(prompt);
+    if (parsed) {
+      return res.json({ success: true, pipeline: parsed, source: geminiModelId() });
     }
   }
 
@@ -365,6 +346,35 @@ function requireOfficerPin(req: Request, res: Response): boolean {
   }
   return true;
 }
+
+v1Router.post('/gemini/desk-assist', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    const trackingId = req.body?.trackingId ? String(req.body.trackingId) : '';
+    let caseLike = req.body;
+    if (trackingId) {
+      const { caseData } = await getCaseByTrackingId(trackingId);
+      if (!caseData) {
+        return res.status(404).json({ success: false, error: `Ticket ${trackingId} not found` });
+      }
+      caseLike = caseData;
+    } else if (!req.body?.title || !req.body?.description) {
+      return res.status(400).json({
+        success: false,
+        error: 'Provide trackingId or both title and description',
+      });
+    }
+    const result = await computeDeskAssist(caseLike);
+    return res.json({
+      success: true,
+      source: result.source,
+      model: result.model,
+      assist: result.assist,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'Desk assist failed' });
+  }
+});
 
 v1Router.post('/cases', async (req: Request, res: Response) => {
   try {
