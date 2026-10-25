@@ -123,7 +123,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
     setCallFeedbackPressed(null);
 
     try {
-      const response = await fetch('/api/gemini/solve-pipeline', {
+      const response = await fetch(apiAbsolutePath('/api/gemini/solve-pipeline'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -188,7 +188,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
         pipelineOutput?.namedEntities?.asset ||
         pipelineOutput?.projectSanctionDPR?.projectName ||
         'Citizen infrastructure request';
-      const res = await fetch('/api/v1/tickets', {
+      const res = await fetch(`${apiV1Base()}/tickets`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

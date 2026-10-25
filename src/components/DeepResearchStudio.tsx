@@ -58,7 +58,7 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
     
     setIsLoading(true);
     try {
-      const response = await fetch('/api/gemini/deep-research', {
+      const response = await fetch(apiAbsolutePath('/api/gemini/deep-research'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

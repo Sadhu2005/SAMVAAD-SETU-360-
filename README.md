@@ -3,17 +3,77 @@
 
 - [BRICS 2026 Innovation Track 1](https://brics-info.org)
 - [Digital Public Goods Alliance](https://digitalpublicgoods.net)
-- [Live prototype](https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/)
-- [Bhashini](https://bhashini.gov.in)
-- [PM GatiShakti](https://gatishakti.gov.in)
-- [DPDP Act 2023](https://www.meity.gov.in)
+- [Live prototype (Cloud Run)](https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/)
+- [Bhashini](https://bhashini.gov.in) · [PM GatiShakti](https://gatishakti.gov.in) · [DPDP Act 2023](https://www.meity.gov.in)
 
 ---
 
-### Live Interactive Resolution Prototype
-**Direct URL**: [https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/](https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/)
+## Prototype status (read this first)
 
-Experience real-time Bhashini speech de-noising, contractor cartel anti-astroturfing defense, PM GatiShakti 1,400+ layer GIS triangulation, DIPS mathematical equity scoring, automatic Central Scheme DPR budget allocation, and closed-loop native IVR voice verification.
+This repository is an **operational prototype**, not the full national DPI stack. The **Citizen → ticket → Officer Command Desk → proof → citizen verify** loop is real (Firestore or local fallback). **Menu / briefing tabs** (edge cases, deep research, fiscal fusion, BRICS dossiers, etc.) are **policy and UX storytelling**—helpful for demos and DOCX export, but **not** production integrations unless listed under **What works today** below.
+
+**OK for prototype?** Yes—for pilots, BRICS Track 1 demos, and officer-desk walkthroughs when Cloud Run (or local `npm run dev`) runs the Express API. GitHub Pages hosts the **static UI only**; set `VITE_API_ORIGIN` to your Cloud Run URL for live tickets (see [docs/deploy/github-pages.md](docs/deploy/github-pages.md)).
+
+| Deploy | URL / command |
+|--------|----------------|
+| **Cloud Run / AI Studio** | [Live app](https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/) (API + UI together) |
+| **Local** | `npm run dev` → `http://localhost:3000` |
+| **GitHub Pages** | Actions workflow `Deploy GitHub Pages` → static UI; API via `VITE_API_ORIGIN` |
+
+---
+
+## What works today (v1.7.x)
+
+These features are implemented, tested (`npm run test:all`), and mounted under **`/api/v1/`** with **`X-API-Version: 1.0.0`**.
+
+### Product surfaces (Citizen + Government)
+
+| Area | Working capability |
+|------|---------------------|
+| **Citizen portal** | Submit need with **LGD state/district** selects; durable tracking ID; optional photo/voice (browser capture); public track with **last-4 mobile** unlock; yes/no resolution verification |
+| **Officer Command Desk** | PIN inbox; filter; guided **next-step** pipeline; assign department; start work; remarks; completion proof upload; SLA breach hints |
+| **Privacy (DPDP-style)** | Phone masked + ephemeral token on intake; no full mobile in public track without last-4 |
+| **India geo master** | `GET /api/v1/geo/states`, `GET /api/v1/geo/districts`; bundled LGD snapshot + Firestore when configured |
+
+### DPI integrations (server-side; keys not in browser)
+
+| Integration | Working today | Notes |
+|-------------|---------------|--------|
+| **Gemini desk assist** | `POST /api/v1/gemini/desk-assist` | Optional; **rules fallback** if `GEMINI_API_KEY` missing |
+| **Bhashini ASR** | `POST /api/v1/bhashini/transcribe` | Needs `BHASHINI_*` on server; else **503**; officer **Transcribe voice** |
+| **PM GatiShakti** | Catalog **1,447** layers + officer **Triangulate** | Bundled NMMP taxonomy + sample assets; optional live GIS env later |
+| **NITI Aayog indices** | MPI / DIEW on **submit** + officer **Refresh NITI indices** | Bundled district snapshot; national median fallback |
+
+### Briefing & export (demo / narrative)
+
+| Tab / tool | Working today |
+|------------|----------------|
+| Overview, Menu, GatiShakti GIS hub | UI + **live catalog counts** from API where wired |
+| Deep Research, Edge Case stress tests | Calls Gemini when key set; otherwise limited |
+| Live Resolution walkthrough | Scripted pipeline demo + optional real ticket POST |
+| **DOCX Blueprint** | Client-side export of briefing pack (not a government submission system) |
+
+### Engineering
+
+- **CI:** separate GitHub Actions jobs—Typecheck, Governance, Unit / Integration / Regression / Functional, **CI passed** (`.github/workflows/ci.yml`)
+- **Pages:** Build + Deploy jobs (`.github/workflows/pages.yml`)
+- **Governance:** `work-items.json` ledger; `npm run gov:check`
+
+Setup guides: [Bhashini](docs/integrations/bhashini-setup.md) · [GatiShakti](docs/integrations/gati-shakti-setup.md) · [NITI demographics](docs/integrations/niti-demographics.md)
+
+---
+
+## Coming soon (next versions)
+
+Not implemented as production systems in this prototype—shown in UI/copy for **vision only**:
+
+- **Channels:** Toll-free IVR 1912, WhatsApp/Telegram bots, 2G SMS store-and-forward, CSC offline mesh
+- **Bhashini:** Field-grade denoising, 22+ dialect tuning, citizen-side ASR (today: officer transcribe when ULCA keys are set)
+- **GatiShakti:** Live national **1,400+ layer** WMS/WFS connector (today: catalog + bundled point triangulation)
+- **NITI / analytics:** Full **112** aspirational districts live sync; census 2026 refresh; village-level MPI
+- **Trust & safety:** Sybil-Guard bot suppression, emergency IMD/NDRF interrupt, production ZK proofs
+- **Execution:** Beckn **UJWO** dispatch to departments, Sentinel SAR proof, automated Bhashini IVR callback, public differential-privacy heatmaps
+- **Capital pipeline:** Automated DPR / scheme sanctioning, NDB co-financing workflow (today: suggested scheme strings + briefing tables)
 
 ---
 
@@ -24,9 +84,13 @@ Governments globally struggle to consolidate citizen feedback and align it with 
 2. **Unaddressed Infrastructure Gaps**: High-distress rural and tribal deficits (washed-out culverts, snapped electrical feeders, contaminated community borewells) remaining invisible to central planners.
 3. **No Measurement of DPI Impact**: Inability to quantify whether capital expenditure genuinely solved community distress.
 
-**SAMVAAD-SETU 360°** is an open-source, scalable, multilingual AI platform designed as a **Digital Public Good (DPG)**. Grounded in India's pioneer Digital Public Infrastructure (DPI) ecosystem, it aggregates citizen development requests via **voice, text, and messaging apps** across diverse linguistic regions, reconciles all 10 critical real-world edge cases, and fuses citizen demand with **PM GatiShakti** geospatial masterplans and **NITI Aayog** demographic indices to recommend bankable, prioritized projects to policymakers across BRICS member nations.
+**SAMVAAD-SETU 360°** is an open-source **Digital Public Good (DPG)** prototype aimed at aligning citizen development feedback with national infrastructure planning. The **long-term** goal is omni-channel ingestion (voice, text, messaging), **Bhashini** harmonization, **PM GatiShakti** fusion, **NITI Aayog** equity weighting, and closed-loop verification. **Today**, the repo delivers the **ticket loop**, **officer desk**, and **partial** server integrations listed above; the rest is roadmap and briefing content.
 
 ---
+
+## Long-term vision & briefing (not all built yet)
+
+The architecture diagram, edge-case matrix, case studies, fiscal fusion tables, and impact metrics below are **design and policy narrative** for BRICS / DOCX briefings. Use **What works today** for accurate prototype scope.
 
 ## End-to-End System Architecture
 
@@ -253,9 +317,9 @@ To resolve the multi-billion dollar disconnect where public funds are captured b
 
 ---
 
-## 1-Click DOCX Blueprint Generator
+## 1-Click DOCX Blueprint Generator (briefing export)
 
-The repository includes a dedicated Microsoft Word (`.docx`) publishing engine built using `docx` and `file-saver`. It produces a formal, publication-ready policy memorandum containing:
+Client-side **briefing pack** export (`docx` + `file-saver`)—not an official government filing system. It can include:
 - Formal Cover Page with BRICS Innovation Track 1 credentials.
 - Executive Summary and Governance Problem Framing.
 - Full 5-Layer DPI Technical Architecture.
@@ -269,9 +333,9 @@ The repository includes a dedicated Microsoft Word (`.docx`) publishing engine b
 ## Quickstart & Installation
 
 ### Prerequisites
-- Node.js 20+
+- Node.js **22+** recommended (CI uses 22)
 - npm 10+
-- (Optional) Gemini API Key for live AI deep research
+- Optional: `GEMINI_API_KEY`, Firebase `VITE_FIREBASE_*`, server `BHASHINI_*` (see `.env.example`)
 
 ### Clone & Install
 ```bash
@@ -295,9 +359,13 @@ Optional **Bhashini ULCA ASR** (citizen voice → text on the officer desk): set
 
 **NITI Aayog demographic indices (MPI / DIEW):** `/api/v1/niti/district` and auto-enrichment on ticket submit; officer **Refresh NITI indices**. [docs/integrations/niti-demographics.md](docs/integrations/niti-demographics.md).
 
-**CI:** GitHub Actions runs lint, governance audit, and all four test tiers via `npm run test:all` (see `.github/workflows/ci.yml`).
+**CI:** [`.github/workflows/ci.yml`](.github/workflows/ci.yml)—separate jobs: Typecheck, Governance audit, Unit / Integration / Regression / Functional tests, **CI passed**. Locally: `npm run test:all`.
 
-For **AI Studio / Cloud Run**, set the same variables in the Secrets panel (use production `APP_URL` in `.env.example`). For **local dev**, use `APP_URL=http://localhost:3000`.
+**GitHub Pages:** [`.github/workflows/pages.yml`](.github/workflows/pages.yml)—**Build static site** + **Deploy to GitHub Pages**. Set repo variable **`VITE_API_ORIGIN`** to your Cloud Run URL. Details: [docs/deploy/github-pages.md](docs/deploy/github-pages.md).
+
+**Health check:** `GET /api/v1/health` reports `geminiReady`, `bhashiniConfigured`, `gatiShaktiCatalogLayers`, `nitiIndicesBundled`.
+
+For **AI Studio / Cloud Run**, set the same variables in Secrets (see `APP_URL` in `.env.example`). For **local dev**, use `APP_URL=http://localhost:3000`.
 
 Do **not** commit `firebase-applet-config.json` or real API keys. If a key was ever pushed to GitHub, rotate it in Google Cloud and follow [docs/security/firebase-key-rotation.md](docs/security/firebase-key-rotation.md).
 
@@ -315,17 +383,17 @@ npm start
 
 ---
 
-## Digital Public Goods Standard Compliance
+## Digital Public Goods Standard Compliance (target vs prototype)
 
-| DPG Standard Indicator | Implementation in Samvaad-Setu 360° |
-|---|---|
-| **1. Relevance to SDGs** | Direct alignment with SDG 9 (Infrastructure), SDG 10 (Reduced Inequalities), SDG 16 (Accountable Institutions). |
-| **2. Open Licensing** | Apache 2.0 Open Source License. |
-| **3. Clear Ownership** | Documented under BRICS DPI Track 1 Innovation Taskforce. |
-| **4. Platform Independence** | Browser-accessible, runs on standard Node.js & Docker environments. |
-| **5. Non-PII Extraction** | Client-side Zero-Knowledge tokenization; no plain-text PII retained. |
-| **6. Privacy & DPDP Act 2023** | Differential privacy heatmaps ($k \ge 50$); automated facial/license plate blurring. |
-| **7. Open Standards** | Implements Beckn Protocol, W3C Web Standards, and OpenStreetMap/OGC GIS protocols. |
+| DPG Standard Indicator | Prototype today | Target / coming soon |
+|---|---|---|
+| **1. Relevance to SDGs** | Citizen–state feedback loop for infrastructure needs | Full SDG 9/10/16 measurement dashboards |
+| **2. Open Licensing** | Apache 2.0 | Same |
+| **3. Clear Ownership** | BRICS DPI Track 1 narrative + open repo | Formal steward MOU |
+| **4. Platform Independence** | Node.js + Vite + Express; Cloud Run / Pages | Container hardening guides |
+| **5. Non-PII Extraction** | Masked phone + token on tickets | Production ZK / vault integration |
+| **6. Privacy & DPDP Act 2023** | Last-4 gate on track portal | DP heatmaps, media redaction pipeline |
+| **7. Open Standards** | `/api/v1/` versioning; OSM embed on desk | Beckn UJWO, OGC live GatiShakti |
 
 ---
 

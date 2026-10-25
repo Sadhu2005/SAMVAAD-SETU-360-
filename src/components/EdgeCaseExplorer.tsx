@@ -35,7 +35,7 @@ export const EdgeCaseExplorer: React.FC = () => {
   const handleRunStressTest = async (ec: EdgeCase) => {
     setStressTestingId(ec.id);
     try {
-      const response = await fetch('/api/gemini/solve-edge-case', {
+      const response = await fetch(apiAbsolutePath('/api/gemini/solve-edge-case'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
