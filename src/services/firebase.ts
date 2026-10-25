@@ -16,8 +16,9 @@ let dbInstance: Firestore | null = null;
 if (isFirebaseConfigured) {
   try {
     const app = getApps().length > 0 ? getApp() : initializeApp(config as any);
-    dbInstance = config.firestoreDatabaseId
-      ? getFirestore(app, config.firestoreDatabaseId)
+    const dbId = config.firestoreDatabaseId?.trim();
+    dbInstance = (dbId && dbId !== '(default)')
+      ? getFirestore(app, dbId)
       : getFirestore(app);
   } catch (e) {
     console.warn('Failed to initialize Firebase app:', e);
