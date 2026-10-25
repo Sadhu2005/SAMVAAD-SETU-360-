@@ -23,6 +23,9 @@ describe('Integration: Officer Command Desk action panel', () => {
     expect(government).toContain('apiAssignTicket');
     expect(government).toContain('apiOfficerUpdate');
     expect(government).toContain('apiProofTicket');
+    expect(government).toContain('AI assist (optional)');
+    expect(government).toContain('apiDeskAssist');
+    expect(government).toContain('Get suggestion');
   });
 
   it('blocks double submit and does not dump the old equal action row', () => {

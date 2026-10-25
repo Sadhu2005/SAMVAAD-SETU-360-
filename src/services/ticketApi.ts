@@ -123,6 +123,29 @@ export async function apiProofTicket(
   return data.case;
 }
 
+export interface DeskAssistResponse {
+  success: boolean;
+  source: 'gemini' | 'rules';
+  model?: string;
+  assist: {
+    summary: string;
+    suggestedDepartment: string;
+    suggestedUrgency: string;
+    remarksDraft: string;
+  };
+}
+
+export async function apiDeskAssist(trackingId: string): Promise<DeskAssistResponse> {
+  const res = await fetch(`${API}/gemini/desk-assist`, {
+    method: 'POST',
+    headers: officerHeaders(),
+    body: JSON.stringify({ trackingId }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Desk assist failed');
+  return data;
+}
+
 export async function apiOfficerUpdate(
   trackingId: string,
   body: {

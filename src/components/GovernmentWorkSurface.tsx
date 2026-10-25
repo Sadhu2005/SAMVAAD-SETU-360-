@@ -6,7 +6,14 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import type { CaseStatus, CitizenCase } from '../services/caseService';
-import { apiAssignTicket, apiOfficerInbox, apiOfficerUpdate, apiProofTicket } from '../services/ticketApi';
+import {
+  apiAssignTicket,
+  apiDeskAssist,
+  apiOfficerInbox,
+  apiOfficerUpdate,
+  apiProofTicket,
+  type DeskAssistResponse,
+} from '../services/ticketApi';
 import {
   clearOfficerSession,
   expectedDeskPin,
@@ -66,6 +73,9 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
   const [proofFile, setProofFile] = useState<string>('');
   const [proofName, setProofName] = useState('');
   const [busy, setBusy] = useState(false);
+  const [assistLoading, setAssistLoading] = useState(false);
+  const [assistError, setAssistError] = useState<string | null>(null);
+  const [assistResult, setAssistResult] = useState<DeskAssistResponse | null>(null);
 
   useEffect(() => {
     setSession(getOfficerSession());
@@ -98,6 +108,8 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
     setFieldError(null);
     setProofFile('');
     setProofName('');
+    setAssistResult(null);
+    setAssistError(null);
   }, [selected?.trackingId]);
 
   const loadInbox = async () => {
@@ -140,6 +152,21 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
     setOfficerSession(next);
     setSession(next);
     setLoginError(null);
+  };
+
+  const loadDeskAssist = async () => {
+    if (!selected) return;
+    setAssistLoading(true);
+    setAssistError(null);
+    try {
+      const result = await apiDeskAssist(selected.trackingId);
+      setAssistResult(result);
+    } catch (err: any) {
+      setAssistError(err.message);
+      setAssistResult(null);
+    } finally {
+      setAssistLoading(false);
+    }
   };
 
   const runDeskAction = async (step: OfficerDeskStep) => {
@@ -439,6 +466,67 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
                   <img src={selected.completionProof.photoUrl} alt="Officer proof" className="rounded-sm max-h-56 w-full object-cover" />
                 </div>
               )}
+
+              <section
+                className="border border-gov-border bg-gov-inset p-4 space-y-3"
+                aria-labelledby="ai-assist-heading"
+              >
+                <p className="text-xs uppercase font-bold text-gov-teal tracking-wide">AI assist (optional)</p>
+                <h4 id="ai-assist-heading" className="text-sm font-semibold text-gov-navy">
+                  Suggested summary and routing
+                </h4>
+                <p className="text-xs text-gov-muted">
+                  Suggestions only. You must still choose Accept, Assign, or other actions yourself.
+                </p>
+                <button
+                  type="button"
+                  disabled={assistLoading || busy}
+                  aria-busy={assistLoading}
+                  onClick={() => void loadDeskAssist()}
+                  className="min-h-11 px-4 rounded-sm bg-gov-teal text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {assistLoading ? 'Getting suggestion…' : 'Get suggestion'}
+                </button>
+                {assistError && <p className="text-sm text-gov-error">{assistError}</p>}
+                {assistResult && (
+                  <div className="space-y-2 text-sm text-gov-text">
+                    {assistResult.source === 'rules' && (
+                      <p className="text-xs text-gov-muted">
+                        Live AI unavailable; showing rule-based suggestion.
+                      </p>
+                    )}
+                    <p>{assistResult.assist.summary}</p>
+                    <p>
+                      <span className="font-semibold text-gov-navy">Department:</span>{' '}
+                      {assistResult.assist.suggestedDepartment}
+                      {' · '}
+                      <span className="font-semibold text-gov-navy">Urgency:</span>{' '}
+                      {assistResult.assist.suggestedUrgency}
+                    </p>
+                    {assistResult.assist.remarksDraft && (
+                      <p className="text-gov-muted">{assistResult.assist.remarksDraft}</p>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setDept(assistResult.assist.suggestedDepartment)}
+                        className="min-h-11 px-3 rounded-sm bg-gov-card border border-gov-border text-sm font-semibold"
+                      >
+                        Apply department
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => setRemarks(assistResult.assist.remarksDraft)}
+                        className="min-h-11 px-3 rounded-sm bg-gov-card border border-gov-border text-sm font-semibold"
+                      >
+                        Use remarks
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </section>
 
               <section className="border border-gov-navy bg-gov-navy-soft p-4 space-y-3" aria-labelledby="next-step-heading">
                 <p className="text-xs uppercase font-bold text-gov-navy tracking-wide">Next step</p>
