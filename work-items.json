@@ -1107,6 +1107,69 @@
           "evidence": "NITI MPI/DIEW APIs + auto submit enrich + GitHub Actions ci.yml. npm run test:all — 107/107."
         }
       ]
+    },
+    {
+      "id": "FIX-013",
+      "order": 22,
+      "title": "Prove one citizen-to-officer ticket through HTTP and UI",
+      "summary": "Walk one complaint submit → inbox → triage → assign → start work → proof → last-4 verify; record outcomes; fix persist/status bugs only.",
+      "phase": "Core DPI",
+      "owner": "engineering",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-008"
+      ],
+      "source": {
+        "path": "src/test/functional/http-ticket-loop.test.ts",
+        "section": "HTTP ticket loop"
+      },
+      "scope": {
+        "write_globs": [
+          "server.ts",
+          "src/services/caseService.ts",
+          "src/utils/ticketLogic.ts",
+          "src/components/CitizenTrackPortal.tsx",
+          "src/components/GovernmentWorkSurface.tsx",
+          "src/test/**",
+          "docs/evidence/**",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "One tracking ID survives POST tickets, inbox, triage, assign, start_work, proof, last-4 track, and verify.",
+        "Each step persists with the correct CaseStatus.",
+        "Citizen track shows proof_uploaded then citizen_verified.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.7.4-ticket-loop-proof.",
+      "history": [
+        {
+          "from": "new",
+          "to": "queued",
+          "at": "2026-10-25T12:56:00.000Z",
+          "session_id": "cursor-agent-fix-013",
+          "evidence": "Registered new task in work-items.json ledger."
+        },
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T12:57:17.861Z",
+          "session_id": "cursor-agent-fix-013",
+          "evidence": "Claimed work item FIX-013 with active write scopes: server.ts, src/services/caseService.ts, src/utils/ticketLogic.ts, src/components/CitizenTrackPortal.tsx, src/components/GovernmentWorkSurface.tsx, src/test/**, docs/evidence/**, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T13:03:02.920Z",
+          "session_id": "agent-session-verified",
+          "evidence": "All tests passed with 0 errors"
+        }
+      ]
     }
   ]
 }

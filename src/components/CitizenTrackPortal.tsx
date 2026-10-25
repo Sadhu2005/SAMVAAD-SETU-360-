@@ -467,7 +467,11 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
               <p className="text-xs font-mono text-gov-teal">{currentCase.trackingId}</p>
               <h3 className="text-lg font-black text-gov-text">{currentCase.title}</h3>
               <p className="text-sm text-gov-muted">{currentCase.description}</p>
-              <div className="inline-flex min-h-10 items-center px-3 rounded-full bg-gov-teal-soft text-gov-navy text-sm font-bold border border-gov-teal">
+              <div
+                className="inline-flex min-h-10 items-center px-3 rounded-full bg-gov-teal-soft text-gov-navy text-sm font-bold border border-gov-teal"
+                role="status"
+                aria-label={`Status: ${CITIZEN_STATUS_LABEL[status]}`}
+              >
                 {CITIZEN_STATUS_LABEL[status]}
               </div>
               <p className="text-xs text-gov-muted">

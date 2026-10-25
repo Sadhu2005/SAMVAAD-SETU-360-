@@ -854,4 +854,18 @@ async function startServer() {
   });
 }
 
-startServer();
+function isDirectRun(): boolean {
+  const entry = process.argv[1];
+  if (!entry) return false;
+  try {
+    return path.resolve(fileURLToPath(import.meta.url)) === path.resolve(entry);
+  } catch {
+    return false;
+  }
+}
+
+export { app, startServer };
+
+if (isDirectRun()) {
+  void startServer();
+}
