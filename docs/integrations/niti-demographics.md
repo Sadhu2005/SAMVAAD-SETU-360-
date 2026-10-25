@@ -25,4 +25,4 @@ New citizen tickets call `applyNitiEnrichmentToCase` on submit when state/distri
 
 ## CI
 
-GitHub Actions workflow `.github/workflows/ci.yml` runs `npm run test:all` (lint, governance, unit, integration, regression, functional) on push and pull requests.
+GitHub Actions workflow `.github/workflows/ci.yml` runs **separate jobs** (Typecheck, Governance audit, Unit / Integration / Regression / Functional tests, then **CI passed**) on push and pull requests. Locally, `npm run test:all` still runs the full pipeline in one command.

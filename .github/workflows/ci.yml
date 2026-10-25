@@ -16,37 +16,102 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  verify:
-    name: Lint, governance, and 4-tier tests
+  lint:
+    name: Typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
+      - run: npm ci
+      - run: npm run lint
 
-      - name: Install dependencies
-        run: npm ci
+  governance:
+    name: Governance audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run gov:check
 
-      - name: Typecheck and governance audit
-        run: npm run lint && npm run gov:check
+  test-unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:unit
 
-      - name: Unit tests
-        run: npm run test:unit
+  test-integration:
+    name: Integration tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:integration
 
-      - name: Integration tests
-        run: npm run test:integration
+  test-regression:
+    name: Regression tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:regression
 
-      - name: Regression tests
-        run: npm run test:regression
+  test-functional:
+    name: Functional tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run test:functional
 
-      - name: Functional tests
-        run: npm run test:functional
-
-      - name: Full pipeline (test:all)
-        run: npm run test:all
+  ci-success:
+    name: CI passed
+    runs-on: ubuntu-latest
+    needs:
+      - lint
+      - governance
+      - test-unit
+      - test-integration
+      - test-regression
+      - test-functional
+    if: always()
+    steps:
+      - name: All checks green
+        run: |
+          test "${{ needs.lint.result }}" = "success"
+          test "${{ needs.governance.result }}" = "success"
+          test "${{ needs.test-unit.result }}" = "success"
+          test "${{ needs.test-integration.result }}" = "success"
+          test "${{ needs.test-regression.result }}" = "success"
+          test "${{ needs.test-functional.result }}" = "success"
+          echo "All CI jobs passed."
