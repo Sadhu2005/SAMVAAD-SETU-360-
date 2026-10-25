@@ -9,7 +9,9 @@ import {
   FileText,
   Database,
   Activity,
-  Award
+  Award,
+  UserCheck,
+  Building2
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -26,6 +28,8 @@ export const Header: React.FC<HeaderProps> = ({
   isExporting,
 }) => {
   const tabs = [
+    { id: 'citizen-portal', label: 'Citizen Track & Verify', icon: UserCheck, badge: 'Live Intake' },
+    { id: 'government-desk', label: 'Govt Action Queue', icon: Building2, badge: 'Official Desk' },
     { id: 'prototype', label: '🚀 Live Prototype (Solve Now)', icon: Sparkles, badge: 'Interactive' },
     { id: 'overview', label: '360° Overview', icon: Globe2 },
     { id: 'edge-cases', label: '10 Edge Cases', icon: ShieldCheck, badge: 'All 360°' },
