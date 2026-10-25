@@ -23,7 +23,26 @@ This skill enforces strict, production-grade engineering discipline across all c
 
 ---
 
-## 2. Core Rule 1: Mandatory 4-Tier Automated Testing
+## 2. Core Rule 0: Mandatory Agent Registration in /work-items.json
+**CRITICAL**: `/work-items.json` is the sole authoritative ledger for all agent operations. Before modifying any code, the agent MUST register and claim its work item:
+
+1. **Check or Register Item**:
+   - Inspect `/work-items.json`. If an item exists for the current task, note its `id`.
+   - If starting a new feature, register it with a unique ID (`FEAT-XXX`, `GOV-XXX`, `DPI-XXX`), `risk_tier` (0-4), strict `scope.write_globs`, and acceptance criteria.
+2. **Claim Item**:
+   - Run: `node scripts/governance/register-work.js --claim <ID> <SESSION_ID>`
+   - Status transitions from `queued` to `in_progress`.
+   - **Scope Lock**: The agent must NEVER edit files outside its declared `write_globs`.
+3. **Verify & Record Evidence**:
+   - After running all tests, verify the work item:
+   - Run: `node scripts/governance/register-work.js --verify <ID> "<evidence description>"`
+   - Status transitions to `local_verified`.
+4. **Audit**:
+   - Run: `npm run gov:check` to ensure ledger integrity.
+
+---
+
+## 3. Core Rule 1: Mandatory 4-Tier Automated Testing
 For **every single feature file** written, the agent MUST implement and execute all four levels of tests:
 
 ```

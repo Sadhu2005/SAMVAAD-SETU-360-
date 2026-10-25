@@ -16,7 +16,9 @@
     "test:integration": "vitest run src/test/integration",
     "test:regression": "vitest run src/test/regression",
     "test:functional": "vitest run src/test/functional",
-    "test:all": "npm run lint && vitest run"
+    "test:all": "npm run lint && npm run gov:check && vitest run",
+    "gov:check": "node scripts/governance/check-governance.js",
+    "gov:list": "node scripts/governance/register-work.js --list"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

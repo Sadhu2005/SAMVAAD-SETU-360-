@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "policy": {
+    "source_of_truth": "This file owns work lifecycle, ordering, authority, and scope across all human and autonomous AI agent sessions. Linked documents own detailed evidence and rationale.",
+    "automatic_execution": "Only auto_start items at Tier 0-2 with settled local approval may be selected automatically.",
+    "production_boundary": "Production writes, deployments, migrations, payments, secret changes, and external communications always require explicit owner approval.",
+    "agent_registration_requirement": "MANDATORY: Every agent session MUST verify or register its work item in /work-items.json with defined write_globs before editing code files, and record verification evidence upon completion.",
+    "concurrency_protection": "Two concurrent agent sessions MUST NOT claim overlapping write_globs simultaneously."
+  },
+  "items": [
+    {
+      "id": "GOV-001",
+      "order": 1,
+      "title": "Install cross-agent workboard, registration protocol, and bounded execution controls",
+      "summary": "Create work-items.json, registration CLI, shared session claims, and scope-bounded continuation.",
+      "phase": "Foundation",
+      "owner": "engineering",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [],
+      "source": {
+        "path": "skills/engineering_workflow/SKILL.md",
+        "section": "Governance and Work-Items Protocol"
+      },
+      "scope": {
+        "write_globs": [
+          "work-items.json",
+          "scripts/governance/**",
+          "skills/engineering_workflow/**",
+          ".claude/skills/engineering-workflow/**",
+          "package.json"
+        ]
+      },
+      "acceptance": [
+        "work-items.json exists at root and adheres to strict schema.",
+        "Agent work items track lifecycle from queued -> in_progress -> local_verified.",
+        "Automated governance validation script verifies workboard integrity."
+      ],
+      "next_action": "Distribute governance contract to all active agent skills and pre-commit hooks.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "local_verified",
+          "at": "2026-10-25T05:27:00.000Z",
+          "session_id": "ai-studio-agent-0640e8cf",
+          "evidence": "work-items.json initialized with policy, foundation governance items, and registration script."
+        }
+      ]
+    },
+    {
+      "id": "GOV-002",
+      "order": 2,
+      "title": "4-Tier automated test suite and regression harness",
+      "summary": "Vitest setup executing Unit, Integration, Regression, and Functional test suites on every feature file.",
+      "phase": "Quality Assurance",
+      "owner": "engineering",
+      "priority": "P0",
+      "risk_tier": 1,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": ["GOV-001"],
+      "source": {
+        "path": "vitest.config.ts",
+        "section": "Test Runner Configuration"
+      },
+      "scope": {
+        "write_globs": [
+          "src/test/**",
+          "vitest.config.ts",
+          "package.json"
+        ]
+      },
+      "acceptance": [
+        "Unit, Integration, Regression, and Functional tests run via npm run test:all.",
+        "Zero failing tests required for build and branch merge eligibility."
+      ],
+      "next_action": "Maintain 100% test coverage for all new feature additions.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "local_verified",
+          "at": "2026-10-25T05:24:30.000Z",
+          "session_id": "ai-studio-agent-0640e8cf",
+          "evidence": "11/11 tests across 5 test suites passed cleanly with 0 type errors."
+        }
+      ]
+    },
+    {
+      "id": "GOV-003",
+      "order": 3,
+      "title": "Strict Semantic API Versioning (/api/v1/)",
+      "summary": "Mount v1Router with X-API-Version headers, backward compatibility aliases, and /api/v1/meta contract.",
+      "phase": "API Architecture",
+      "owner": "backend",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": ["GOV-001"],
+      "source": {
+        "path": "server.ts",
+        "section": "API v1 Router"
+      },
+      "scope": {
+        "write_globs": [
+          "server.ts",
+          "src/test/integration/api-v1-routes.test.ts"
+        ]
+      },
+      "acceptance": [
+        "Endpoints exposed under /api/v1/* and aliased to /api/*.",
+        "Response headers include X-API-Version: 1.0.0 and X-API-Standard: DPG-BRICS-Track1."
+      ],
+      "next_action": "Deprecate unversioned client calls after 180-day grace period.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "local_verified",
+          "at": "2026-10-25T05:22:00.000Z",
+          "session_id": "ai-studio-agent-0640e8cf",
+          "evidence": "Integrated Express v1Router with /meta, /health, and deep research endpoints."
+        }
+      ]
+    },
+    {
+      "id": "DPI-001",
+      "order": 4,
+      "title": "Multilingual Bhashini ASR and DPDP Act 2023 Tokenization",
+      "summary": "Ingest rural vernacular oral dialects over noisy 2G/IVR with zero-knowledge contact masking.",
+      "phase": "Core DPI",
+      "owner": "engineering",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": ["GOV-001", "GOV-002"],
+      "source": {
+        "path": "src/components/LiveResolutionPrototype.tsx",
+        "section": "Stage 1 Ingestion"
+      },
+      "scope": {
+        "write_globs": [
+          "src/components/FeedbackSimulator.tsx",
+          "src/components/LiveResolutionPrototype.tsx",
+          "src/test/unit/dpdp-tokenization.test.ts"
+        ]
+      },
+      "acceptance": [
+        "ASR handles 22+ official languages and dialects with -24dB spectral denoising.",
+        "Citizen PII replaced with cryptographic ephemeral hash."
+      ],
+      "next_action": "Benchmark field acoustic accuracy across Bundeli, Gondi, and Santhali."
+    },
+    {
+      "id": "DPI-002",
+      "order": 5,
+      "title": "PM GatiShakti 1,400+ GIS layers fusion and UJWO generation",
+      "summary": "Triangulate colloquial landmarks with cadastral boundaries and generate Unified Joint Work Orders.",
+      "phase": "Core DPI",
+      "owner": "geospatial",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": ["DPI-001"],
+      "source": {
+        "path": "src/components/GatiShaktiMapHub.tsx",
+        "section": "Cadastral Fusion"
+      },
+      "scope": {
+        "write_globs": [
+          "src/components/GatiShaktiMapHub.tsx",
+          "src/components/DatasetFusionEngine.tsx",
+          "src/data/fusionData.ts"
+        ]
+      },
+      "acceptance": [
+        "Resolves colloquial landmark to WGS84 spatial polygon.",
+        "Generates Beckn-compatible inter-agency UJWO order code."
+      ],
+      "next_action": "Add spatial buffers for river basin flood-inundation zones."
+    },
+    {
+      "id": "DPI-003",
+      "order": 6,
+      "title": "Dynamic Infrastructure Priority Score (DIPS) with NITI Aayog MPI multipliers",
+      "summary": "Algorithmic resource allocation weighting poverty deficit indicators for rural equity.",
+      "phase": "Core DPI",
+      "owner": "analytics",
+      "priority": "P0",
+      "risk_tier": 1,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": ["DPI-002"],
+      "source": {
+        "path": "src/test/unit/dips-scoring.test.ts",
+        "section": "DIPS Algorithm"
+      },
+      "scope": {
+        "write_globs": [
+          "src/test/unit/dips-scoring.test.ts",
+          "src/components/LiveResolutionPrototype.tsx"
+        ]
+      },
+      "acceptance": [
+        "Aspirational districts receive up to 8.5x equity multiplier.",
+        "Bounded strictly within [0, 100] scale."
+      ],
+      "next_action": "Integrate real-time 2026 census socioeconomic data."
+    },
+    {
+      "id": "DPI-004",
+      "order": 7,
+      "title": "Closed-Loop Proof of Completion (CL-PoC) Verification",
+      "summary": "Audit physical infrastructure delivery via Sentinel-1 SAR radar, geo-tagged photos, and IVR callbacks.",
+      "phase": "Core DPI",
+      "owner": "engineering",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": ["DPI-003"],
+      "source": {
+        "path": "src/components/DpiImpactTracker.tsx",
+        "section": "Closed-Loop Audit"
+      },
+      "scope": {
+        "write_globs": [
+          "src/components/DpiImpactTracker.tsx",
+          "src/components/PolicymakerDossier.tsx"
+        ]
+      },
+      "acceptance": [
+        "Satellite SAR matches pre vs post span coordinates.",
+        "Automated native IVR dialer gathers citizen confirmation."
+      ],
+      "next_action": "Connect to state treasury PFMS escrow release triggers."
+    }
+  ]
+}
