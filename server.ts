@@ -3,6 +3,13 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
+import {
+  submitCitizenCase,
+  getCaseByTrackingId,
+  getAllCases,
+  updateCaseByOfficer,
+  citizenVerifyResolution
+} from './src/services/caseService';
 
 dotenv.config();
 
@@ -46,6 +53,11 @@ v1Router.get('/meta', (_req: Request, res: Response) => {
     endpoints: [
       { path: '/api/v1/health', method: 'GET', description: 'System health check & LLM readiness' },
       { path: '/api/v1/meta', method: 'GET', description: 'API contract & versioning metadata' },
+      { path: '/api/v1/cases', method: 'GET', description: 'List active citizen development requests' },
+      { path: '/api/v1/cases', method: 'POST', description: 'Submit real citizen case with durable tracking ID' },
+      { path: '/api/v1/cases/:trackingId', method: 'GET', description: 'Retrieve case status & audit log' },
+      { path: '/api/v1/cases/:trackingId', method: 'PATCH', description: 'Officer triage, assignment & proof upload' },
+      { path: '/api/v1/cases/:trackingId/verify', method: 'POST', description: 'Citizen closed-loop resolution sign-off' },
       { path: '/api/v1/gemini/deep-research', method: 'POST', description: 'Execute DPI deep policy research' },
       { path: '/api/v1/gemini/solve-edge-case', method: 'POST', description: 'Mitigate governance edge cases' },
       { path: '/api/v1/gemini/solve-pipeline', method: 'POST', description: 'End-to-end 6-stage DPI resolution pipeline' },
@@ -292,6 +304,95 @@ Respond ONLY with valid JSON with these exact keys.`;
   };
 
   return res.json({ success: true, pipeline: fallbackPipeline, source: 'dpi-deterministic-engine' });
+});
+
+// Live Citizen Cases Endpoints
+v1Router.get('/cases', async (_req: Request, res: Response) => {
+  try {
+    const cases = await getAllCases();
+    res.json({ success: true, count: cases.length, cases });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.post('/cases', async (req: Request, res: Response) => {
+  try {
+    const { title, description, category, district, state, contactNumber, spokenDialect, channel, urgency } = req.body;
+    if (!title || !description || !category || !district || !state || !contactNumber) {
+      return res.status(400).json({ success: false, error: 'Missing mandatory intake fields' });
+    }
+    const newCase = await submitCitizenCase({
+      title,
+      description,
+      category,
+      district,
+      state,
+      contactNumber,
+      spokenDialect,
+      channel,
+      urgency,
+    });
+    res.status(201).json({ success: true, trackingId: newCase.trackingId, case: newCase });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.get('/cases/:trackingId', async (req: Request, res: Response) => {
+  try {
+    const { trackingId } = req.params;
+    const result = await getCaseByTrackingId(trackingId);
+    if (!result.caseData) {
+      return res.status(404).json({ success: false, error: `Case ${trackingId} not found` });
+    }
+    res.json({ success: true, case: result.caseData, auditLogs: result.auditLogs });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.patch('/cases/:trackingId', async (req: Request, res: Response) => {
+  try {
+    const { trackingId } = req.params;
+    const { status, officerName, officerRole, department, assignedOfficer, officerPhone, remarks, completionProof } = req.body;
+    if (!status || !officerName) {
+      return res.status(400).json({ success: false, error: 'status and officerName are required' });
+    }
+    const updated = await updateCaseByOfficer({
+      trackingId,
+      status,
+      officerName,
+      officerRole: officerRole || 'field_officer',
+      department,
+      assignedOfficer,
+      officerPhone,
+      remarks: remarks || `Status transitioned to ${status}`,
+      completionProof,
+    });
+    res.json({ success: true, case: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.post('/cases/:trackingId/verify', async (req: Request, res: Response) => {
+  try {
+    const { trackingId } = req.params;
+    const { verified, satisfactionRating, feedbackText } = req.body;
+    if (typeof verified !== 'boolean') {
+      return res.status(400).json({ success: false, error: 'verified (boolean) is required' });
+    }
+    const updated = await citizenVerifyResolution({
+      trackingId,
+      verified,
+      satisfactionRating,
+      feedbackText,
+    });
+    res.json({ success: true, case: updated });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
 });
 
 // Mount versioned API router under /api/v1 and alias to /api for backward compatibility

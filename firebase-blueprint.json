@@ -1,0 +1,58 @@
+{
+  "entities": {
+    "CitizenCase": {
+      "title": "Citizen Case",
+      "description": "Durable record of a citizen infrastructure development need, lifecycle status, assignment, and resolution proof.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "trackingId": { "type": "string" },
+        "citizenToken": { "type": "string" },
+        "citizenPhoneMasked": { "type": "string" },
+        "title": { "type": "string" },
+        "category": { "type": "string" },
+        "description": { "type": "string" },
+        "spokenDialect": { "type": "string" },
+        "channel": { "type": "string" },
+        "district": { "type": "string" },
+        "state": { "type": "string" },
+        "urgency": { "type": "string" },
+        "status": { "type": "string" },
+        "dipsScore": { "type": "number" },
+        "assignedDept": { "type": "string" },
+        "assignedOfficer": { "type": "string" },
+        "slaHours": { "type": "number" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "completionProof": { "type": "object" },
+        "citizenFeedback": { "type": "object" }
+      },
+      "required": ["trackingId", "title", "category", "description", "district", "state", "status", "createdAt"]
+    },
+    "AuditLog": {
+      "title": "Case Audit Log",
+      "description": "Immutable chronological entry for any status change, triage action, assignment, or verification.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "caseId": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "actor": { "type": "string" },
+        "role": { "type": "string" },
+        "action": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["caseId", "timestamp", "actor", "action"]
+    }
+  },
+  "firestore": {
+    "/cases/{caseId}": {
+      "schema": "CitizenCase",
+      "description": "Collection of public infrastructure cases submitted by citizens and managed by government departments."
+    },
+    "/cases/{caseId}/audit_logs/{logId}": {
+      "schema": "AuditLog",
+      "description": "Immutable sub-collection storing the audit trail for each case action."
+    }
+  }
+}

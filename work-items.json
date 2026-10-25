@@ -251,6 +251,59 @@
         "Automated native IVR dialer gathers citizen confirmation."
       ],
       "next_action": "Connect to state treasury PFMS escrow release triggers."
+    },
+    {
+      "id": "FEAT-001",
+      "order": 8,
+      "title": "Live Citizen Intake, Tracking Identity, and Government Work Surface",
+      "summary": "Implement durable case intake, public tracking IDs, departmental officer work surface, and closed-loop resolution.",
+      "phase": "Operational Capabilities",
+      "owner": "full-stack",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": true,
+      "depends_on": ["GOV-001", "GOV-002", "GOV-003", "DPI-001", "DPI-002", "DPI-003", "DPI-004"],
+      "source": {
+        "path": "docs/gap-inventory/operational-capabilities.md",
+        "section": "Operational Capabilities Plan"
+      },
+      "scope": {
+        "write_globs": [
+          "src/components/**",
+          "src/data/**",
+          "src/services/**",
+          "src/test/**",
+          "server.ts",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "Citizens can file real requests and receive durable SETU-2026-XX-XXXX tracking IDs.",
+        "Citizens can look up their case status, officer remarks, and uploaded proofs anytime.",
+        "Government officers have an interactive work surface to assign, triage, and upload resolution proofs.",
+        "Citizens can confirm or contest resolution against their own case.",
+        "All 4 tiers of automated tests pass with 0 errors."
+      ],
+      "next_action": "Promote feature/v1.2.0-operational-capabilities to main.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T06:16:00.000Z",
+          "session_id": "ai-studio-agent-0640e8cf",
+          "evidence": "Claimed FEAT-001 on branch feature/v1.2.0-operational-capabilities."
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T06:34:00.000Z",
+          "session_id": "ai-studio-agent-0640e8cf",
+          "evidence": "Firebase Firestore provisioned, CitizenTrackPortal, GovernmentWorkSurface, API v1 routes, and 10/10 test files (23/23 tests) verified passing."
+        }
+      ]
     }
   ]
 }

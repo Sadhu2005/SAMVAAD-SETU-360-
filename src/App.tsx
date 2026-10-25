@@ -6,6 +6,8 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { LiveResolutionPrototype } from './components/LiveResolutionPrototype';
+import { CitizenTrackPortal } from './components/CitizenTrackPortal';
+import { GovernmentWorkSurface } from './components/GovernmentWorkSurface';
 import { Overview } from './components/Overview';
 import { EdgeCaseExplorer } from './components/EdgeCaseExplorer';
 import { DatasetFusionEngine } from './components/DatasetFusionEngine';
@@ -70,6 +72,10 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {activeTab === 'citizen-portal' && <CitizenTrackPortal />}
+
+        {activeTab === 'government-desk' && <GovernmentWorkSurface />}
+
         {activeTab === 'prototype' && (
           <LiveResolutionPrototype onExportDocx={handleQuickExportDocx} />
         )}

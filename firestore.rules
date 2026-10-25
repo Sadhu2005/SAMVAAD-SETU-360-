@@ -1,0 +1,20 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Citizen infrastructure cases are open public records for transparency
+    match /cases/{caseId} {
+      allow read: if true;
+      allow create: if request.resource.data.trackingId is string
+                    && request.resource.data.title is string
+                    && request.resource.data.status is string;
+      allow update: if true;
+      allow delete: if false; // Immutable ledger: cases cannot be deleted
+
+      match /audit_logs/{logId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if false; // Audit logs are strictly append-only
+      }
+    }
+  }
+}
