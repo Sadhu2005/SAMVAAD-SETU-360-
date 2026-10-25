@@ -25,10 +25,39 @@ if (apiKey) {
   }
 }
 
+// Version 1 API Router
+const v1Router = express.Router();
+
+v1Router.use((_req: Request, res: Response, next) => {
+  res.setHeader('X-API-Version', '1.0.0');
+  res.setHeader('X-API-Standard', 'DPG-BRICS-Track1');
+  next();
+});
+
+// API Contract & Version Specification
+v1Router.get('/meta', (_req: Request, res: Response) => {
+  res.json({
+    name: 'SAMVAAD-SETU 360° DPI Engine API',
+    version: '1.0.0',
+    currentVersion: 'v1',
+    supportedVersions: ['v1'],
+    deprecationPolicy: '180 days notice before endpoint decommissioning',
+    spec: '/api/v1/meta',
+    endpoints: [
+      { path: '/api/v1/health', method: 'GET', description: 'System health check & LLM readiness' },
+      { path: '/api/v1/meta', method: 'GET', description: 'API contract & versioning metadata' },
+      { path: '/api/v1/gemini/deep-research', method: 'POST', description: 'Execute DPI deep policy research' },
+      { path: '/api/v1/gemini/solve-edge-case', method: 'POST', description: 'Mitigate governance edge cases' },
+      { path: '/api/v1/gemini/solve-pipeline', method: 'POST', description: 'End-to-end 6-stage DPI resolution pipeline' },
+    ]
+  });
+});
+
 // Health check endpoint
-app.get('/api/health', (_req: Request, res: Response) => {
+v1Router.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
+    version: '1.0.0',
     timestamp: new Date().toISOString(),
     hasGeminiKey: Boolean(apiKey),
     platform: 'SamvaadSetu 360 DPI Engine'
@@ -36,7 +65,7 @@ app.get('/api/health', (_req: Request, res: Response) => {
 });
 
 // Deep Research API using Gemini 3.8 Flash
-app.post('/api/gemini/deep-research', async (req: Request, res: Response) => {
+v1Router.post('/gemini/deep-research', async (req: Request, res: Response) => {
   const { topic, query, district, state, country = 'India' } = req.body;
 
   const prompt = `You are the Lead Digital Public Infrastructure (DPI) & Governance AI Architect for the BRICS Innovation Track 1 Initiative ("SamvaadSetu 360").
@@ -106,7 +135,7 @@ This DPI archetype translates directly to:
 });
 
 // Interactive Edge Case Solver API
-app.post('/api/gemini/solve-edge-case', async (req: Request, res: Response) => {
+v1Router.post('/gemini/solve-edge-case', async (req: Request, res: Response) => {
   const { edgeCaseId, edgeCaseTitle, scenarioDescription, constraints } = req.body;
 
   const prompt = `You are the Lead Systems Architect for SamvaadSetu 360, a Digital Public Good platform for BRICS Track 1.
@@ -163,7 +192,7 @@ Incorporated into the BRICS Digital Public Infrastructure Guidelines as a benchm
 });
 
 // Live End-to-End Resolution Pipeline API (Solves any citizen feedback to Sanctioned DPR)
-app.post('/api/gemini/solve-pipeline', async (req: Request, res: Response) => {
+v1Router.post('/gemini/solve-pipeline', async (req: Request, res: Response) => {
   const { citizenInput, language, district, state, channel = 'IVR Voice Call 1912' } = req.body;
 
   const prompt = `You are the Automated AI Engine of SAMVAAD-SETU 360°, a Digital Public Good platform for BRICS Track 1.
@@ -264,6 +293,10 @@ Respond ONLY with valid JSON with these exact keys.`;
 
   return res.json({ success: true, pipeline: fallbackPipeline, source: 'dpi-deterministic-engine' });
 });
+
+// Mount versioned API router under /api/v1 and alias to /api for backward compatibility
+app.use('/api/v1', v1Router);
+app.use('/api', v1Router);
 
 // Setup Vite in Dev or Static files in Prod
 async function startServer() {

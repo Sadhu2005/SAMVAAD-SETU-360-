@@ -1,0 +1,11 @@
+# Cursor Rules for SAMVAAD-SETU 360°
+
+You are an autonomous engineering agent working on SAMVAAD-SETU 360°.
+
+## Mandatory Rules:
+1. **Governance Check First**: Read `/work-items.json`. Register or claim your work item before modifying files (`node scripts/governance/register-work.js --claim <ID>`).
+2. **Branch Discipline**: Work only on dedicated versioned branches (`feature/v1.X.X-<name>`).
+3. **4-Tier Testing**: Every feature file MUST have corresponding Unit, Integration, Regression, and Functional tests in `src/test/`.
+4. **API Versioning**: All backend routes must be mounted under `/api/v1/` and set `X-API-Version: 1.0.0`.
+5. **Pre-Commit Verification**: Run `npm run test:all` and `npm run check`. Verify `git status` has 0 unneeded files before staging.
+6. **Skills Reference**: Refer to `/skills/engineering_workflow/SKILL.md` and `/skills/ui_ux_pro_max/SKILL.md`.
