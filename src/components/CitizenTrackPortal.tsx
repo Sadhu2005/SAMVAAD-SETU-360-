@@ -12,7 +12,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import type { AuditLogEntry, CitizenCase } from '../services/caseService';
-import { apiSubmitTicket, apiTrackTicket, apiVerifyTicket } from '../services/ticketApi';
+import { apiAttachTicketMedia, apiSubmitTicket, apiTrackTicket, apiVerifyTicket } from '../services/ticketApi';
 import { fileToDataUrl, uploadTicketMedia } from '../services/mediaUpload';
 import { CITIZEN_STATUS_LABEL, type CaseStatus } from '../utils/ticketLogic';
 
@@ -93,19 +93,19 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
         lat,
         lng,
       });
-      let voiceUrl = voiceData;
-      let photoUrl = photoData;
-      if (voiceData) voiceUrl = await uploadTicketMedia(created.trackingId, 'voice', voiceData);
-      if (photoData) photoUrl = await uploadTicketMedia(created.trackingId, 'photo', photoData);
-      if (voiceUrl || photoUrl) {
-        // Second write via same submit fields is already stored; keep URLs client-side if API did not accept media on first pass
+      const digits = phone.replace(/\D/g, '').slice(-4);
+      let attached = created.case;
+      if (voiceData || photoData) {
+        const voiceUrl = voiceData ? await uploadTicketMedia(created.trackingId, 'voice', voiceData) : undefined;
+        const photoUrl = photoData ? await uploadTicketMedia(created.trackingId, 'photo', photoData) : undefined;
+        attached = await apiAttachTicketMedia(created.trackingId, digits, { voiceUrl, photoUrl });
       }
       setNewId(created.trackingId);
       setTrackingId(created.trackingId);
-      setLast4(phone.replace(/\D/g, '').slice(-4));
-      setCurrentCase({ ...created.case, voiceUrl, photoUrl });
+      setLast4(digits);
+      setCurrentCase(attached);
       setScreen('track');
-      await handleTrack(created.trackingId, phone.replace(/\D/g, '').slice(-4));
+      await handleTrack(created.trackingId, digits);
     } catch (err: any) {
       setError(err.message || 'Could not submit');
     } finally {
@@ -361,7 +361,7 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
               type="button"
               onClick={() => handleTrack()}
               disabled={loading}
-              className="w-full min-h-12 rounded-sm bg-gov-navy text-gov-text font-bold flex items-center justify-center gap-2"
+              className="w-full min-h-12 rounded-sm bg-gov-navy text-white font-bold flex items-center justify-center gap-2"
             >
               <Search className="w-4 h-4" />
               {loading ? 'Looking up…' : 'Show my ticket'}
@@ -380,8 +380,24 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
                 {currentCase.village ? `${currentCase.village}, ` : ''}
                 {currentCase.district}, {currentCase.state}
               </p>
+              {(currentCase.photoUrl || currentCase.voiceUrl) && (
+                <div className="space-y-2 border border-gov-border bg-gov-inset p-3">
+                  <p className="text-sm font-semibold text-gov-navy">Your submitted media</p>
+                  {currentCase.photoUrl && (
+                    <img src={currentCase.photoUrl} alt="Citizen submitted photo" className="rounded-sm max-h-56 w-full object-cover" />
+                  )}
+                  {currentCase.voiceUrl && (
+                    <audio controls src={currentCase.voiceUrl} className="w-full">
+                      Your browser does not support audio.
+                    </audio>
+                  )}
+                </div>
+              )}
               {currentCase.completionProof?.photoUrl && (
-                <img src={currentCase.completionProof.photoUrl} alt="Officer proof" className="rounded-sm max-h-56 w-full object-cover" />
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gov-navy">Officer proof</p>
+                  <img src={currentCase.completionProof.photoUrl} alt="Officer proof" className="rounded-sm max-h-56 w-full object-cover" />
+                </div>
               )}
               {canConfirm && (
                 <div className="space-y-2 pt-2">
@@ -399,7 +415,7 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
                       type="button"
                       disabled={verifying}
                       onClick={() => handleVerify(false)}
-                      className="min-h-12 rounded-sm bg-gov-error text-gov-text font-bold flex items-center justify-center gap-2"
+                      className="min-h-12 rounded-sm bg-gov-error text-white font-bold flex items-center justify-center gap-2"
                     >
                       <ThumbsDown className="w-4 h-4" /> No
                     </button>

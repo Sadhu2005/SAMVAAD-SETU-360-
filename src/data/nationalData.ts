@@ -287,7 +287,6 @@ export const SAMPLE_FEEDBACK_SIMULATIONS: CitizenFeedbackSimulation[] = [
 export const BRICS_PARTNER_DATA = [
   {
     country: 'India (Anchor)',
-    flag: '🇮🇳',
     population: '1.43 Billion',
     dominantDPI: 'Aadhaar, UPI, Bhashini, PM GatiShakti, DigiLocker, ONDC',
     pilotFocus: 'Multilingual oral grievance aggregation across 22 scheduled languages and Aspirational Districts.',
@@ -295,7 +294,6 @@ export const BRICS_PARTNER_DATA = [
   },
   {
     country: 'Brazil',
-    flag: '🇧🇷',
     population: '215 Million',
     dominantDPI: 'PIX (Instant Payments), Gov.br Unified Portal, Cadastro Único',
     pilotFocus: 'Voice-enabled ingestion for Quilombola, Favela, and Amazonian indigenous communities in Portuguese and Tupian dialects.',
@@ -303,7 +301,6 @@ export const BRICS_PARTNER_DATA = [
   },
   {
     country: 'South Africa',
-    flag: '🇿🇦',
     population: '60 Million',
     dominantDPI: 'GovChat, SASSA Social Grants, SARS eFiling, Open Data Portal',
     pilotFocus: 'Citizen-led municipal service backlog tracking in townships across 11 official languages (isiZulu, isiXhosa, Afrikaans, Sesotho).',
@@ -311,7 +308,6 @@ export const BRICS_PARTNER_DATA = [
   },
   {
     country: 'Russia',
-    flag: '🇷🇺',
     population: '144 Million',
     dominantDPI: 'Gosuslugi Unified Public Services Portal, Mir Payment System, SBP',
     pilotFocus: 'Extreme climate permafrost infrastructure sensor & remote Siberian citizen feedback triangulation.',
@@ -319,7 +315,6 @@ export const BRICS_PARTNER_DATA = [
   },
   {
     country: 'China',
-    flag: '🇨🇳',
     population: '1.41 Billion',
     dominantDPI: 'Digital Yuan (e-CNY), National Government Service Platform, Geospatial Beidou Masterplan',
     pilotFocus: 'Rural Western Revitalization demand-response infrastructure coordination across multi-dialect regions.',
@@ -327,7 +322,6 @@ export const BRICS_PARTNER_DATA = [
   },
   {
     country: 'Egypt & Ethiopia',
-    flag: '🇪🇬🇪🇹',
     population: '235 Million combined',
     dominantDPI: 'Fayda ID (Ethiopia - MOSIP based), Digital Egypt Platform, InstaPay',
     pilotFocus: 'Nile Basin rural water resource distribution & drought feedback in Arabic, Amharic, Oromo, and Tigrinya.',

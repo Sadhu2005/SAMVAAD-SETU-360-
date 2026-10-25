@@ -132,6 +132,59 @@ export function canOfficerPerform(role: OfficerRoleKey, action: 'assign' | 'proo
   return false;
 }
 
+export type OfficerDeskAction =
+  | 'triage'
+  | 'assign'
+  | 'start_work'
+  | 'proof'
+  | 'escalate'
+  | 'close_override'
+  | 'close_verified';
+
+export function canApplyOfficerAction(status: CaseStatus, action: OfficerDeskAction): boolean {
+  switch (action) {
+    case 'triage':
+      return status === 'submitted';
+    case 'assign':
+      return status === 'submitted' || status === 'triaged';
+    case 'start_work':
+      return status === 'assigned';
+    case 'proof':
+      return status === 'assigned' || status === 'in_progress';
+    case 'escalate':
+      return status === 'triaged' || status === 'assigned' || status === 'in_progress';
+    case 'close_override':
+      return status !== 'closed' && status !== 'rejected' && status !== 'citizen_verified';
+    case 'close_verified':
+      return status === 'citizen_verified';
+    default:
+      return false;
+  }
+}
+
+export function officerActionBlockedReason(status: CaseStatus, action: OfficerDeskAction): string | undefined {
+  if (canApplyOfficerAction(status, action)) return undefined;
+  if (action === 'start_work') return 'Assign the case first, then start work.';
+  if (action === 'proof') return 'Case must be assigned or in progress before proof.';
+  if (action === 'triage') return 'Only a newly submitted case can be triaged.';
+  if (action === 'assign') return 'This case is already past assignment.';
+  return `Action ${action} is not available from ${status}.`;
+}
+
+/** Firestore rejects `undefined` field values. Strip them (including nested objects). */
+export function omitUndefined<T>(value: T): T {
+  if (value === null || typeof value !== 'object') return value;
+  if (Array.isArray(value)) {
+    return value.map((item) => omitUndefined(item)) as T;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
+    if (nested === undefined) continue;
+    out[key] = omitUndefined(nested);
+  }
+  return out as T;
+}
+
 export function maskCaseForPublic<T extends { citizenToken?: string; officerPhone?: string; phoneLast4?: string }>(
   caseData: T,
   reveal: boolean

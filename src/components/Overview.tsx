@@ -3,7 +3,6 @@ import {
   FileText,
   CheckCircle2,
   AlertTriangle,
-  Layers,
 } from 'lucide-react';
 
 interface OverviewProps {
@@ -170,8 +169,7 @@ export const Overview: React.FC<OverviewProps> = ({ onNavigateToTab, onExportDoc
       <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-gov-border pb-4">
           <div>
-            <h3 className="text-xl font-bold text-gov-text flex items-center gap-2">
-              <Layers className="w-5 h-5 text-gov-navy" />
+            <h3 className="text-xl font-bold text-gov-text">
               The 5-Layer Digital Public Good Architecture
             </h3>
             <p className="text-xs text-gov-muted mt-0.5">

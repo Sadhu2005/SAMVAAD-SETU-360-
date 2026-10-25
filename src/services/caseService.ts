@@ -22,6 +22,7 @@ import {
   extractPhoneLast4,
   isSlaBreached,
   last4Matches,
+  omitUndefined,
   suggestedSchemeForCategory,
 } from '../utils/ticketLogic';
 
@@ -248,7 +249,7 @@ export async function submitCitizenCase(params: {
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
     const caseDocRef = doc(db!, 'cases', trackingId);
-    await setDoc(caseDocRef, newCase);
+    await setDoc(caseDocRef, omitUndefined(newCase));
 
     const auditRef = collection(db!, 'cases', trackingId, 'audit_logs');
     await addDoc(auditRef, {
@@ -279,6 +280,65 @@ export async function submitCitizenCase(params: {
   ]);
 
   return newCase;
+}
+
+/**
+ * Persist citizen photo/voice URLs after Storage upload. Does not change status.
+ */
+export async function attachCitizenMedia(params: {
+  trackingId: string;
+  last4: string;
+  voiceUrl?: string;
+  photoUrl?: string;
+}): Promise<CitizenCase> {
+  const { caseData } = await getCaseByTrackingId(params.trackingId);
+  if (!caseData) throw new Error(`Case ${params.trackingId} not found`);
+  if (!last4Matches(caseData.phoneLast4, params.last4)) {
+    throw new Error('Phone last-4 does not match this ticket');
+  }
+  if (!params.voiceUrl && !params.photoUrl) {
+    throw new Error('voiceUrl or photoUrl is required');
+  }
+
+  const now = new Date().toISOString();
+  if (params.voiceUrl) caseData.voiceUrl = params.voiceUrl;
+  if (params.photoUrl) caseData.photoUrl = params.photoUrl;
+  caseData.updatedAt = now;
+
+  const attached = [params.photoUrl ? 'photo' : null, params.voiceUrl ? 'voice' : null]
+    .filter(Boolean)
+    .join(' and ');
+  const details = `Citizen media attached: ${attached}.`;
+
+  try {
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    const caseDocRef = doc(db!, 'cases', caseData.trackingId);
+    await updateDoc(caseDocRef, omitUndefined({ ...caseData }));
+    await addDoc(collection(db!, 'cases', caseData.trackingId, 'audit_logs'), {
+      caseId: caseData.trackingId,
+      timestamp: now,
+      actor: caseData.citizenPhoneMasked,
+      role: 'citizen',
+      action: 'Citizen media attached',
+      details,
+    });
+  } catch (err) {
+    console.warn('Firestore media attach fallback to local store:', err);
+  }
+
+  localCasesMap.set(caseData.trackingId, caseData);
+  const logs = localAuditLogsMap.get(caseData.trackingId) || [];
+  logs.push({
+    caseId: caseData.trackingId,
+    timestamp: now,
+    actor: caseData.citizenPhoneMasked,
+    role: 'citizen',
+    action: 'Citizen media attached',
+    details,
+  });
+  localAuditLogsMap.set(caseData.trackingId, logs);
+
+  return caseData;
 }
 
 /**
@@ -381,7 +441,7 @@ export async function updateCaseByOfficer(params: {
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
     const caseDocRef = doc(db!, 'cases', params.trackingId);
-    await updateDoc(caseDocRef, { ...caseData });
+    await updateDoc(caseDocRef, omitUndefined({ ...caseData }));
     await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
       caseId: params.trackingId,
       timestamp: now,
@@ -447,7 +507,7 @@ export async function citizenVerifyResolution(params: {
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
     const caseDocRef = doc(db!, 'cases', params.trackingId);
-    await updateDoc(caseDocRef, { ...caseData });
+    await updateDoc(caseDocRef, omitUndefined({ ...caseData }));
     await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
       caseId: params.trackingId,
       timestamp: now,

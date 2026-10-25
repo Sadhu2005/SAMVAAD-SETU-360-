@@ -57,7 +57,7 @@ export const PolicymakerDossier: React.FC<PolicymakerDossierProps> = ({ onExport
             <button
               key={c}
               onClick={() => setSelectedCountry(c)}
-              className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+              className={`min-h-11 px-3 py-2 rounded-sm text-sm font-semibold whitespace-nowrap cursor-pointer ${
                 selectedCountry === c
                   ? 'bg-gov-teal text-white font-bold shadow-md'
                   : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'

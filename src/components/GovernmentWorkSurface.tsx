@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Building2,
   Filter,
   LogOut,
   Upload,
@@ -15,7 +14,13 @@ import {
   setOfficerSession,
   type OfficerSession,
 } from '../services/officerSession';
-import { canOfficerPerform, CITIZEN_STATUS_LABEL, isSlaBreached, type OfficerRoleKey } from '../utils/ticketLogic';
+import {
+  canOfficerPerform,
+  CITIZEN_STATUS_LABEL,
+  isSlaBreached,
+  officerActionBlockedReason,
+  type OfficerRoleKey,
+} from '../utils/ticketLogic';
 import { fileToDataUrl, uploadTicketMedia } from '../services/mediaUpload';
 
 const ROLES: { id: OfficerRoleKey; label: string }[] = [
@@ -97,7 +102,10 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
     setLoginError(null);
   };
 
-  const runAction = async (status: CaseStatus, extra?: { noteOnly?: boolean; proof?: boolean; closeOverride?: boolean }) => {
+  const runAction = async (
+    status: CaseStatus,
+    extra?: { noteOnly?: boolean; proof?: boolean; closeOverride?: boolean; escalate?: boolean }
+  ) => {
     if (!selected || !session) return;
     setBusy(true);
     setError(null);
@@ -108,7 +116,9 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
           status: selected.status,
           officerName: session.name,
           officerRoleKey: session.role,
-          remarks: remarks || 'Please provide additional site details.',
+          remarks:
+            remarks ||
+            (extra.escalate ? 'Escalated to next authority.' : 'Please provide additional site details.'),
           noteOnly: true,
         });
       } else if (extra?.proof) {
@@ -159,9 +169,7 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
   if (!session) {
     return (
       <div className="max-w-md mx-auto bg-gov-card border border-gov-border rounded-sm p-6 space-y-4">
-        <h2 className="text-2xl font-black text-gov-text flex items-center gap-2">
-          <Building2 className="w-6 h-6 text-gov-teal" /> Officer Command Desk
-        </h2>
+        <h2 className="text-2xl font-black text-gov-text">Officer Command Desk</h2>
         <p className="text-sm text-gov-muted">Sign in with your role and desk PIN. Tickets are live — not demo cards.</p>
         <form onSubmit={login} className="space-y-3">
           <label className="block space-y-1">
@@ -230,29 +238,75 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-2 space-y-2 max-h-[70vh] overflow-y-auto">
-          {loading && <p className="text-sm text-gov-muted">Loading inbox…</p>}
-          {!loading && cases.length === 0 && <p className="text-sm text-gov-muted">No live tickets yet. A citizen must submit first.</p>}
-          {cases.map((c) => {
-            const breach = isSlaBreached(c.createdAt, c.slaDeadlineHours);
-            return (
-              <button
-                key={c.trackingId}
-                type="button"
-                onClick={() => setSelected(c)}
-                className={`w-full text-left rounded-sm border p-3 min-h-16 ${
-                  selected?.trackingId === c.trackingId ? 'border-gov-navy bg-gov-navy-soft' : 'border-gov-border bg-gov-card'
-                }`}
-              >
-                <div className="flex justify-between gap-2">
-                  <span className="font-mono text-[11px] text-gov-teal">{c.trackingId}</span>
-                  {breach && <AlertTriangle className="w-4 h-4 text-gov-error" />}
-                </div>
-                <p className="font-bold text-gov-text text-sm">{c.title}</p>
-                <p className="text-xs text-gov-muted">{CITIZEN_STATUS_LABEL[c.status]} · {c.district}</p>
-              </button>
-            );
-          })}
+        <div className="lg:col-span-2 max-h-[70vh] overflow-y-auto bg-gov-card border border-gov-border">
+          {loading && <p className="text-sm text-gov-muted p-3">Loading inbox…</p>}
+          {!loading && cases.length === 0 && <p className="text-sm text-gov-muted p-3">No live tickets yet. A citizen must submit first.</p>}
+          {!loading && cases.length > 0 && (
+            <>
+              <div className="lg:hidden space-y-2 p-2">
+                {cases.map((c) => {
+                  const breach = isSlaBreached(c.createdAt, c.slaDeadlineHours);
+                  return (
+                    <button
+                      key={c.trackingId}
+                      type="button"
+                      onClick={() => setSelected(c)}
+                      className={`w-full text-left border p-3 min-h-16 ${
+                        selected?.trackingId === c.trackingId ? 'border-gov-navy bg-gov-navy-soft' : 'border-gov-border bg-gov-card'
+                      }`}
+                    >
+                      <p className="font-mono text-[11px] text-gov-teal">{c.trackingId}</p>
+                      <p className="font-bold text-gov-text text-sm">{c.title}</p>
+                      <p className="text-xs text-gov-muted">
+                        {CITIZEN_STATUS_LABEL[c.status]} · {c.district}
+                        {breach ? ' · SLA breach' : ''}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+              <table className="hidden lg:table w-full text-sm">
+                <thead className="bg-gov-inset text-left text-gov-navy">
+                  <tr>
+                    <th className="px-2 py-2 font-semibold">ID</th>
+                    <th className="px-2 py-2 font-semibold">Title</th>
+                    <th className="px-2 py-2 font-semibold">Status</th>
+                    <th className="px-2 py-2 font-semibold">District</th>
+                    <th className="px-2 py-2 font-semibold">SLA</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {cases.map((c) => {
+                    const breach = isSlaBreached(c.createdAt, c.slaDeadlineHours);
+                    const active = selected?.trackingId === c.trackingId;
+                    return (
+                      <tr
+                        key={c.trackingId}
+                        onClick={() => setSelected(c)}
+                        className={`cursor-pointer border-t border-gov-border ${
+                          active ? 'bg-gov-navy-soft text-gov-navy' : 'bg-gov-card'
+                        }`}
+                      >
+                        <td className="px-2 py-2 font-mono text-[11px]">{c.trackingId}</td>
+                        <td className="px-2 py-2 font-semibold">{c.title}</td>
+                        <td className="px-2 py-2">{CITIZEN_STATUS_LABEL[c.status]}</td>
+                        <td className="px-2 py-2">{c.district}</td>
+                        <td className="px-2 py-2">
+                          {breach ? (
+                            <span className="inline-flex items-center gap-1 text-gov-error">
+                              <AlertTriangle className="w-4 h-4" aria-hidden="true" /> Breach
+                            </span>
+                          ) : (
+                            `${c.slaDeadlineHours}h`
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </>
+          )}
         </div>
 
         <div className="lg:col-span-3 bg-gov-card border border-gov-border rounded-sm p-4 space-y-3">
@@ -270,6 +324,25 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
                   className="w-full h-48 rounded-sm border border-gov-border"
                   src={`https://www.openstreetmap.org/export/embed.html?bbox=${selected.lng - 0.02}%2C${selected.lat - 0.02}%2C${selected.lng + 0.02}%2C${selected.lat + 0.02}&layer=mapnik&marker=${selected.lat}%2C${selected.lng}`}
                 />
+              )}
+              {(selected.photoUrl || selected.voiceUrl) && (
+                <div className="space-y-2 border border-gov-border bg-gov-inset p-3">
+                  <p className="text-sm font-semibold text-gov-navy">Citizen submitted media</p>
+                  {selected.photoUrl && (
+                    <img src={selected.photoUrl} alt="Citizen submitted photo" className="rounded-sm max-h-56 w-full object-cover" />
+                  )}
+                  {selected.voiceUrl && (
+                    <audio controls src={selected.voiceUrl} className="w-full">
+                      Your browser does not support audio.
+                    </audio>
+                  )}
+                </div>
+              )}
+              {selected.completionProof?.photoUrl && (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-gov-navy">Officer proof</p>
+                  <img src={selected.completionProof.photoUrl} alt="Officer proof" className="rounded-sm max-h-56 w-full object-cover" />
+                </div>
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <input value={dept} onChange={(e) => setDept(e.target.value)} className="min-h-11 rounded-sm bg-gov-inset border border-gov-border px-2 text-sm" placeholder="Department" />
@@ -290,12 +363,24 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
               </label>
               <div className="flex flex-wrap gap-2">
                 {canOfficerPerform(session.role, 'triage') && (
-                  <button type="button" disabled={busy} onClick={() => runAction('triaged')} className="min-h-11 px-3 rounded-sm bg-gov-inset text-sm font-semibold">
+                  <button
+                    type="button"
+                    disabled={busy || Boolean(officerActionBlockedReason(selected.status, 'triage'))}
+                    title={officerActionBlockedReason(selected.status, 'triage')}
+                    onClick={() => runAction('triaged')}
+                    className="min-h-11 px-3 rounded-sm bg-gov-inset text-sm font-semibold disabled:opacity-50"
+                  >
                     Accept / triage
                   </button>
                 )}
                 {canOfficerPerform(session.role, 'assign') && (
-                  <button type="button" disabled={busy} onClick={() => runAction('assigned')} className="min-h-11 px-3 rounded-sm bg-gov-navy text-sm font-semibold">
+                  <button
+                    type="button"
+                    disabled={busy || Boolean(officerActionBlockedReason(selected.status, 'assign'))}
+                    title={officerActionBlockedReason(selected.status, 'assign')}
+                    onClick={() => runAction('assigned')}
+                    className="min-h-11 px-3 rounded-sm bg-gov-navy text-white text-sm font-semibold disabled:opacity-50"
+                  >
                     Assign
                   </button>
                 )}
@@ -303,30 +388,48 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
                   Request more info
                 </button>
                 {canOfficerPerform(session.role, 'assign') && (
-                  <button type="button" disabled={busy} onClick={() => runAction('in_progress')} className="min-h-11 px-3 rounded-sm bg-gov-teal text-sm font-semibold">
+                  <button
+                    type="button"
+                    disabled={busy || Boolean(officerActionBlockedReason(selected.status, 'start_work'))}
+                    title={officerActionBlockedReason(selected.status, 'start_work')}
+                    onClick={() => runAction('in_progress')}
+                    className="min-h-11 px-3 rounded-sm bg-gov-teal text-white text-sm font-semibold disabled:opacity-50"
+                  >
                     Start work
                   </button>
                 )}
                 {canOfficerPerform(session.role, 'proof') && (
-                  <button type="button" disabled={busy} onClick={() => runAction('proof_uploaded', { proof: true })} className="min-h-11 px-3 rounded-sm bg-gov-success text-sm font-semibold">
+                  <button
+                    type="button"
+                    disabled={busy || Boolean(officerActionBlockedReason(selected.status, 'proof'))}
+                    title={officerActionBlockedReason(selected.status, 'proof')}
+                    onClick={() => runAction('proof_uploaded', { proof: true })}
+                    className="min-h-11 px-3 rounded-sm bg-gov-success text-white text-sm font-semibold disabled:opacity-50"
+                  >
                     Upload proof
                   </button>
                 )}
                 {canOfficerPerform(session.role, 'escalate') && (
-                  <button type="button" disabled={busy} onClick={() => runAction('assigned')} className="min-h-11 px-3 rounded-sm bg-gov-navy text-sm font-semibold">
+                  <button
+                    type="button"
+                    disabled={busy || Boolean(officerActionBlockedReason(selected.status, 'escalate'))}
+                    title={officerActionBlockedReason(selected.status, 'escalate')}
+                    onClick={() => runAction(selected.status, { noteOnly: true, escalate: true })}
+                    className="min-h-11 px-3 rounded-sm bg-gov-navy text-white text-sm font-semibold disabled:opacity-50"
+                  >
                     Escalate
                   </button>
                 )}
                 {canOfficerPerform(session.role, 'close_override') && (
                   <div className="flex flex-wrap gap-2 w-full">
                     <input value={override} onChange={(e) => setOverride(e.target.value)} placeholder="Override reason (required to close without citizen OK)" className="flex-1 min-h-11 rounded-sm bg-gov-inset border border-gov-border px-2 text-sm" />
-                    <button type="button" disabled={busy} onClick={() => runAction('closed', { closeOverride: true })} className="min-h-11 px-3 rounded-sm bg-gov-error text-sm font-semibold">
+                    <button type="button" disabled={busy} onClick={() => runAction('closed', { closeOverride: true })} className="min-h-11 px-3 rounded-sm bg-gov-error text-white text-sm font-semibold">
                       Close with override
                     </button>
                   </div>
                 )}
                 {selected.status === 'citizen_verified' && (
-                  <button type="button" disabled={busy} onClick={() => runAction('closed')} className="min-h-11 px-3 rounded-sm bg-gov-success text-sm font-semibold">
+                  <button type="button" disabled={busy} onClick={() => runAction('closed')} className="min-h-11 px-3 rounded-sm bg-gov-success text-white text-sm font-semibold">
                     Close (citizen verified)
                   </button>
                 )}

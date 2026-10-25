@@ -5,11 +5,9 @@ import {
   CheckCircle2,
   AlertTriangle,
   ShieldCheck,
-  Layers,
   ArrowRight,
   PhoneCall,
   Camera,
-  Cpu,
   FileCheck,
   Download,
   Volume2,
@@ -78,7 +76,7 @@ const PRESET_SCENARIOS: PresetScenario[] = [
     id: 'SCENARIO-4',
     title: 'PHC Solar Cold-Chain Vaccine Spoilage (Rural Health)',
     badge: 'Healthcare Emergency',
-    badgeColor: 'border-cyan-500/40 text-gov-teal bg-cyan-500/10',
+    badgeColor: 'border-gov-teal text-gov-teal bg-gov-teal-soft',
     language: 'Marathi Spoken Vernacular',
     channel: 'ASHA Worker CSC Tablet Store-and-Forward',
     district: 'Gadchiroli',
@@ -291,7 +289,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
             }}
             className={`px-3 py-2 rounded-sm text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
               isCustomMode
-                ? 'bg-gov-navy text-gov-text font-bold shadow-md'
+                ? 'bg-gov-navy text-white font-bold shadow-md'
                 : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
             }`}
           >
@@ -401,14 +399,13 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
           {/* Stepper Bar */}
           <div className="grid grid-cols-2 sm:grid-cols-6 gap-2 text-xs">
             {[
-              { num: 1, label: 'Bhashini ASR', icon: Cpu },
-              { num: 2, label: 'Sybil-Guard', icon: ShieldCheck },
-              { num: 3, label: 'GatiShakti GIS', icon: Layers },
-              { num: 4, label: 'DIPS Algorithm', icon: TrendingUp },
-              { num: 5, label: 'Project DPR', icon: FileText },
-              { num: 6, label: 'CL-PoC Verification', icon: PhoneCall },
+              { num: 1, label: 'Bhashini ASR' },
+              { num: 2, label: 'Sybil-Guard' },
+              { num: 3, label: 'GatiShakti GIS' },
+              { num: 4, label: 'DIPS Algorithm' },
+              { num: 5, label: 'Project DPR' },
+              { num: 6, label: 'CL-PoC Verification' },
             ].map((step) => {
-              const Icon = step.icon;
               const isDone = activePipelineStep > step.num || (activePipelineStep === 6 && !isRunningPipeline);
               const isCurrent = activePipelineStep === step.num && isRunningPipeline;
 
@@ -429,9 +426,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                       <CheckCircle2 className="w-3.5 h-3.5 text-gov-success" />
                     ) : isCurrent ? (
                       <RefreshCw className="w-3.5 h-3.5 animate-spin text-gov-teal" />
-                    ) : (
-                      <Icon className="w-3.5 h-3.5 text-slate-600" />
-                    )}
+                    ) : null}
                   </div>
                   <span className="font-bold text-xs mt-1">{step.label}</span>
                 </div>
@@ -548,14 +543,14 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
               <div className="bg-gov-card p-5 rounded-sm border border-gov-border  space-y-4">
                 <div className="flex items-center justify-between border-b border-gov-border pb-2.5">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 h-6 rounded-sm bg-cyan-500/20 text-gov-teal flex items-center justify-center font-bold text-xs">
+                    <div className="w-6 h-6 rounded-sm bg-gov-teal-soft text-gov-teal flex items-center justify-center font-bold text-xs">
                       3
                     </div>
                     <h4 className="font-bold text-gov-text text-sm">
                       PM GatiShakti GIS Masterplan & Toponym Resolver
                     </h4>
                   </div>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-cyan-500/10 text-gov-teal border border-cyan-500/30">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-gov-teal-soft text-gov-teal border border-gov-teal">
                     1,400+ GIS Layers
                   </span>
                 </div>
@@ -688,7 +683,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                   </span>
                   <button
                     onClick={onExportDocx}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm bg-gov-success hover:bg-emerald-500 text-gov-text font-bold text-[11px] shadow transition-all cursor-pointer flex-shrink-0"
+                    className="flex items-center justify-center gap-1.5 min-h-11 px-3 py-2 rounded-sm bg-gov-success hover:bg-gov-navy text-white font-bold text-sm cursor-pointer flex-shrink-0"
                   >
                     <Download className="w-3.5 h-3.5" />
                     Download Sanction Letter
@@ -733,8 +728,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                   </div>
 
                   <div className="bg-gov-inset p-3.5 rounded-sm border border-gov-border space-y-1">
-                    <div className="text-gov-teal font-bold flex items-center gap-1.5">
-                      <Layers className="w-3.5 h-3.5" />
+                    <div className="text-gov-teal font-bold">
                       Gate 2: Satellite SAR Radar Telemetry
                     </div>
                     <p className="text-gov-muted text-[11px]">
@@ -775,7 +769,7 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                             ? 'bg-gov-teal-soft text-gov-teal border border-gov-teal'
                             : callStatus === 'in-progress'
                             ? 'bg-emerald-500/20 text-gov-success border border-emerald-500/30'
-                            : 'bg-emerald-500 text-gov-text font-black'
+                            : 'bg-gov-success text-white font-bold'
                         }`}>
                           {callStatus === 'ringing' && 'Ringing complainant phone...'}
                           {callStatus === 'in-progress' && 'Call connected (Bhashini voice playing)'}
@@ -795,13 +789,13 @@ export const LiveResolutionPrototype: React.FC<LiveResolutionPrototypeProps> = (
                           <span className="text-[11px] text-gov-muted">Simulate Citizen Keypad Press:</span>
                           <button
                             onClick={() => handlePressKeypad(1)}
-                            className="px-4 py-1.5 rounded-sm bg-gov-success hover:bg-emerald-500 text-gov-text font-black text-xs shadow active:scale-95 transition-all cursor-pointer"
+                            className="min-h-11 px-4 py-2 rounded-sm bg-gov-success hover:bg-gov-navy text-white font-bold text-sm cursor-pointer"
                           >
                             [1] Yes, Work Completed Safely
                           </button>
                           <button
                             onClick={() => handlePressKeypad(2)}
-                            className="px-4 py-1.5 rounded-sm bg-rose-600/80 hover:bg-rose-600 text-gov-text font-semibold text-xs shadow active:scale-95 transition-all cursor-pointer"
+                            className="min-h-11 px-4 py-2 rounded-sm bg-gov-error hover:bg-gov-navy text-white font-semibold text-sm cursor-pointer"
                           >
                             [2] No, Bridge Still Incomplete
                           </button>

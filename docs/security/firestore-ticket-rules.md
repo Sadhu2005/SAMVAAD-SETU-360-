@@ -24,4 +24,29 @@ service cloud.firestore {
 
 Tighten for production: require Firebase Auth for officer roles; keep citizen create public or OTP-gated.
 
-Storage path: `tickets/{trackingId}/**` — allow write of images/audio under that prefix in demo; lock to auth later.
+## Firebase Storage (optional)
+
+Browser uploads from `http://localhost:3000` fail until the bucket has CORS. The app persists voice/photo as data URLs unless `VITE_FIREBASE_STORAGE_UPLOADS=true`.
+
+Apply CORS (owner only, after `gcloud auth login`):
+
+```
+gsutil cors set docs/security/storage-cors.json gs://samvaad-setu-360.firebasestorage.app
+```
+
+Storage rules (`tickets/{trackingId}/**`):
+
+```
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /tickets/{ticketId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if request.resource.size < 8 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|audio/.*|video/.*');
+    }
+  }
+}
+```
+
+Lock writes to signed-in officers before production.

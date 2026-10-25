@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Layers,
   MapPin,
   TrendingUp,
   BarChart2,
@@ -31,8 +30,7 @@ export const GatiShaktiMapHub: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       {/* Header Banner */}
       <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-gov-success border border-emerald-500/30">
-          <Layers className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gov-success-bg text-gov-success border border-gov-success">
           PM GatiShakti & NITI Aayog Geospatial Fusion
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -50,9 +48,9 @@ export const GatiShaktiMapHub: React.FC = () => {
             <span className="text-xs text-gov-muted font-medium">Prioritization Logic:</span>
             <button
               onClick={() => setEquityMultiplierEnabled(!equityMultiplierEnabled)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs font-semibold transition-all cursor-pointer ${
+              className={`flex items-center justify-center gap-2 min-h-11 px-3 py-2 rounded-sm text-sm font-semibold cursor-pointer ${
                 equityMultiplierEnabled
-                  ? 'bg-emerald-500 text-gov-text shadow-md shadow-emerald-500/20'
+                  ? 'bg-gov-success text-white'
                   : 'bg-gov-inset text-gov-muted hover:text-gov-text'
               }`}
             >
@@ -169,8 +167,7 @@ export const GatiShaktiMapHub: React.FC = () => {
 
             {/* PM GatiShakti Triangulation Layer */}
             <div className="bg-gov-navy-soft p-4 rounded-sm border border-gov-border space-y-2">
-              <div className="text-xs font-bold text-gov-navy uppercase tracking-wider flex items-center gap-2">
-                <Layers className="w-4 h-4 text-gov-navy" />
+              <div className="text-xs font-bold text-gov-navy uppercase tracking-wider">
                 PM GatiShakti National Masterplan Layer Triangulation
               </div>
               <p className="text-xs text-gov-navy/90 leading-relaxed font-mono">
@@ -188,7 +185,7 @@ export const GatiShaktiMapHub: React.FC = () => {
                   <CheckCircle className="w-4 h-4" />
                   Recommended High-Priority Public Capital Project
                 </span>
-                <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-emerald-500 text-gov-text">
+                <span className="text-xs font-bold px-2.5 py-2 min-h-11 inline-flex items-center rounded-sm bg-gov-success text-white">
                   {selectedDistrict.prioritizedProjectRecommendation.estimatedCapex}
                 </span>
               </div>

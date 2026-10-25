@@ -490,6 +490,128 @@
           "evidence": "Light civic UI: navy+teal tokens, skip link, white cards, no emoji in UI/README headings. npm run test:all — 38/38 tests, 0 type errors."
         }
       ]
+    },
+    {
+      "id": "FEAT-004",
+      "order": 12,
+      "title": "Persist ticket media, then finish civic leftovers",
+      "summary": "Write citizen photo/voice onto the case, show them on Track and the officer desk, then complete civic UI leftovers. No live Bhashini, IVR, or GIS.",
+      "phase": "Operational Capabilities",
+      "owner": "full-stack",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-003"
+      ],
+      "source": {
+        "path": "src/services/caseService.ts",
+        "section": "attachCitizenMedia"
+      },
+      "scope": {
+        "write_globs": [
+          "src/services/**",
+          "src/utils/**",
+          "src/components/**",
+          "src/test/**",
+          "src/data/**",
+          "src/index.css",
+          "server.ts",
+          "index.html",
+          "README.md",
+          "package.json",
+          ".env.example",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "Citizen photo and voice URLs persist on the ticket after submit.",
+        "Track and officer desk show citizen media separately from officer proof.",
+        "Government inbox is a table on desktop.",
+        "No decorative Lucide branding icons; civic contrast and 44px targets.",
+        "Official page title; README without Chrome live-demo badge.",
+        "canvas-confetti and unused flag fields removed.",
+        "All 4 test tiers pass with 0 errors."
+      ],
+      "next_action": "Implement on feature/v1.5.0-ticket-media.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T08:51:25.569Z",
+          "session_id": "cursor-agent-feat-004",
+          "evidence": "Claimed work item FEAT-004 with active write scopes: src/services/**, src/utils/**, src/components/**, src/test/**, src/data/**, src/index.css, server.ts, index.html, README.md, package.json, .env.example, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T08:54:28.045Z",
+          "session_id": "agent-session-verified",
+          "evidence": "Persist citizen media + civic leftovers. npm run test:all — 41/41 tests, 0 type errors."
+        }
+      ]
+    },
+    {
+      "id": "FIX-002",
+      "order": 13,
+      "title": "Fix HMR websocket, Firestore undefined writes, Storage CORS, officer 400s",
+      "summary": "Attach Vite HMR to the Express server, omit undefined Firestore fields, skip browser Storage until CORS is set, and disable invalid officer actions.",
+      "phase": "Stabilization",
+      "owner": "full-stack",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-004"
+      ],
+      "source": {
+        "path": "src/utils/ticketLogic.ts",
+        "section": "omitUndefined"
+      },
+      "scope": {
+        "write_globs": [
+          "src/utils/**",
+          "src/services/**",
+          "src/components/**",
+          "src/test/**",
+          "src/vite-env.d.ts",
+          "server.ts",
+          "vite.config.ts",
+          "docs/security/**",
+          ".env.example",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "Vite HMR websocket uses the same HTTP server as port 3000.",
+        "Firestore writes omit undefined fields so tickets persist.",
+        "Citizen voice/photo persist without Firebase Storage CORS.",
+        "Officer Start work and Upload proof are disabled until the case is assigned.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Fix on feature/v1.5.0-ticket-media.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T09:03:40.516Z",
+          "session_id": "cursor-agent-fix-002",
+          "evidence": "Claimed work item FIX-002 with active write scopes: src/utils/**, src/services/**, src/components/**, src/test/**, src/vite-env.d.ts, server.ts, vite.config.ts, docs/security/**, .env.example, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T09:05:18.135Z",
+          "session_id": "agent-session-verified",
+          "evidence": "HMR on same HTTP server; omitUndefined Firestore writes; Storage opt-in; officer actions gated. npm run test:all — 46/46 tests."
+        }
+      ]
     }
   ]
 }

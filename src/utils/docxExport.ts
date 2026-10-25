@@ -511,7 +511,7 @@ export async function generateSamvaadSetuDocx(options: DocxOptions = {}) {
           heading: HeadingLevel.HEADING_3,
           spacing: { before: 150, after: 60 },
           children: [
-            new TextRun({ text: `${brics.flag} ${brics.country}`, bold: true, size: 20, color: primaryNavy }),
+            new TextRun({ text: brics.country, bold: true, size: 20, color: primaryNavy }),
           ],
         }),
         new Paragraph({
@@ -813,7 +813,7 @@ export async function generateSamvaadSetuDocx(options: DocxOptions = {}) {
           spacing: { before: 180, after: 60 },
           children: [
             new TextRun({
-              text: `${dossier.countryFlag} [${dossier.country}] ${dossier.projectName}`,
+              text: `[${dossier.country}] ${dossier.projectName}`,
               bold: true,
               color: primaryNavy,
               size: 22,

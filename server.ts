@@ -1,6 +1,7 @@
 import 'dotenv/config';
 
 import express, { Request, Response } from 'express';
+import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI } from '@google/genai';
@@ -9,6 +10,7 @@ import {
   getCaseByTrackingId,
   getAllCases,
   updateCaseByOfficer,
+  attachCitizenMedia,
   citizenVerifyResolution,
   filterOfficerInbox,
   appendCaseNote,
@@ -66,6 +68,7 @@ v1Router.get('/meta', (_req: Request, res: Response) => {
       { path: '/api/v1/tickets/:id/assign', method: 'POST', description: 'Officer assign department' },
       { path: '/api/v1/tickets/:id/proof', method: 'POST', description: 'Officer upload completion proof' },
       { path: '/api/v1/tickets/:id/verify', method: 'POST', description: 'Citizen yes/no verification' },
+      { path: '/api/v1/tickets/:id/media', method: 'POST', description: 'Citizen attach photo or voice after submit' },
       { path: '/api/v1/gemini/deep-research', method: 'POST', description: 'Execute DPI deep policy research' },
       { path: '/api/v1/gemini/solve-edge-case', method: 'POST', description: 'Mitigate governance edge cases' },
       { path: '/api/v1/gemini/solve-pipeline', method: 'POST', description: 'End-to-end 6-stage DPI resolution pipeline' },
@@ -535,6 +538,30 @@ v1Router.post('/tickets/:id/proof', async (req: Request, res: Response) => {
   }
 });
 
+async function handleCitizenMedia(req: Request, res: Response) {
+  const trackingId = req.params.id || req.params.trackingId;
+  try {
+    const { last4, voiceUrl, photoUrl } = req.body || {};
+    if (!last4) {
+      return res.status(400).json({ success: false, error: 'last4 is required' });
+    }
+    const updated = await attachCitizenMedia({
+      trackingId,
+      last4: String(last4),
+      voiceUrl,
+      photoUrl,
+    });
+    res.status(201).json({ success: true, case: updated });
+  } catch (err: any) {
+    const message = err.message || 'Media attach failed';
+    const status = /last-4|not found|required/i.test(message) ? 400 : 500;
+    res.status(status).json({ success: false, error: message });
+  }
+}
+
+v1Router.post('/tickets/:id/media', handleCitizenMedia);
+v1Router.post('/cases/:trackingId/media', handleCitizenMedia);
+
 v1Router.post('/tickets/:id/verify', async (req: Request, res: Response) => {
   req.params.trackingId = req.params.id;
   try {
@@ -591,10 +618,17 @@ app.use('/api', v1Router);
 
 // Setup Vite in Dev or Static files in Prod
 async function startServer() {
+  const httpServer = http.createServer(app);
+  const disableHmr = process.env.DISABLE_HMR === 'true';
+
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        // Attach HMR to this HTTP server so the client does not open :24678.
+        hmr: disableHmr ? false : { server: httpServer },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -605,7 +639,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, () => {
+  httpServer.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
   });
 }

@@ -154,7 +154,6 @@ export const DPI_IMPACT_METRICS: DpiImpactMetric[] = [
 
 export interface PolicymakerProjectDossier {
   country: string;
-  countryFlag: string;
   corridor: string;
   projectName: string;
   capexInr: string;
@@ -172,7 +171,6 @@ export interface PolicymakerProjectDossier {
 export const POLICYMAKER_DOSSIERS: PolicymakerProjectDossier[] = [
   {
     country: 'India',
-    countryFlag: '🇮🇳',
     corridor: 'Bastar Tribal Belt (Chhattisgarh)',
     projectName: 'Bastar Tribal Clean Energy & All-Weather River Crossing Mission',
     capexInr: '₹84.6 Crore',
@@ -188,7 +186,6 @@ export const POLICYMAKER_DOSSIERS: PolicymakerProjectDossier[] = [
   },
   {
     country: 'India',
-    countryFlag: '🇮🇳',
     corridor: 'Nuh Aspirational Corridor (Haryana)',
     projectName: 'Mewat Canal Tail-End Modernization & Sub-District Healthcare Outpost',
     capexInr: '₹142.0 Crore',
@@ -204,7 +201,6 @@ export const POLICYMAKER_DOSSIERS: PolicymakerProjectDossier[] = [
   },
   {
     country: 'Brazil',
-    countryFlag: '🇧🇷',
     corridor: 'Amazonas Interior Corridors (Manaus-Tefé-Coari)',
     projectName: 'Amazonian Riverine Multi-Modal Logistics & Telemedicine Fluvial Network',
     capexInr: '₹118.0 Crore',
@@ -220,7 +216,6 @@ export const POLICYMAKER_DOSSIERS: PolicymakerProjectDossier[] = [
   },
   {
     country: 'South Africa',
-    countryFlag: '🇿🇦',
     corridor: 'Gauteng-Ekurhuleni Township Belt',
     projectName: 'Township Infrastructure Backlog Eradication & Water Pressure Ring-Main',
     capexInr: '₹135.0 Crore',
@@ -236,7 +231,6 @@ export const POLICYMAKER_DOSSIERS: PolicymakerProjectDossier[] = [
   },
   {
     country: 'Russia',
-    countryFlag: '🇷🇺',
     corridor: 'Yamal & Northern Siberian Corridors',
     projectName: 'Permafrost-Resilient Thermopile Foundation & Arctic Clean Heating Mini-Grids',
     capexInr: '₹165.0 Crore',
@@ -252,7 +246,6 @@ export const POLICYMAKER_DOSSIERS: PolicymakerProjectDossier[] = [
   },
   {
     country: 'Egypt & Ethiopia',
-    countryFlag: '🇪🇬🇪🇹',
     corridor: 'Upper Nile & Rift Valley Agrarian Basin',
     projectName: 'Nile Basin Climate-Smart Drip Irrigation & Solar Pumping Cooperative Mesh',
     capexInr: '₹152.0 Crore',

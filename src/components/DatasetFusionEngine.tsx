@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
 import {
-  Layers,
-  Database,
-  GitMerge,
   ArrowRight,
-  TrendingDown,
   AlertTriangle,
   CheckCircle2,
   DollarSign,
@@ -28,8 +24,7 @@ export const DatasetFusionEngine: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       {/* Header Banner */}
       <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-cyan-500/10 text-gov-teal border border-cyan-500/30">
-          <Database className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gov-teal-soft text-gov-teal border border-gov-teal">
           4-Way Big Data Fusion & Fiscal Realignment Engine
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -51,7 +46,6 @@ export const DatasetFusionEngine: React.FC = () => {
                 : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
             }`}
           >
-            <TrendingDown className="w-3.5 h-3.5" />
             Misalignment & Fiscal Drift Calculator
           </button>
 
@@ -59,11 +53,10 @@ export const DatasetFusionEngine: React.FC = () => {
             onClick={() => setActiveDatasetTab('fragmentation')}
             className={`px-3 py-2 rounded-sm text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
               activeDatasetTab === 'fragmentation'
-                ? 'bg-gov-navy text-gov-text font-bold shadow-md'
+                ? 'bg-gov-navy text-white font-bold shadow-md'
                 : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
             }`}
           >
-            <GitMerge className="w-3.5 h-3.5" />
             Fragmented System Consolidator (5 Sources)
           </button>
 
@@ -75,7 +68,6 @@ export const DatasetFusionEngine: React.FC = () => {
                 : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
             }`}
           >
-            <Layers className="w-3.5 h-3.5" />
             4-Way Big Data Fusion Architecture
           </button>
         </div>
@@ -280,8 +272,7 @@ export const DatasetFusionEngine: React.FC = () => {
               </div>
 
               <div className="bg-gov-navy-soft p-4 rounded-sm border border-gov-navy space-y-2">
-                <div className="text-xs font-bold text-gov-navy uppercase tracking-wider flex items-center gap-1.5">
-                  <GitMerge className="w-4 h-4 text-gov-teal" />
+                <div className="text-xs font-bold text-gov-navy uppercase tracking-wider">
                   Samvaad-Setu Unified DPI Ingestion Adapter
                 </div>
                 <p className="text-xs text-gov-text leading-relaxed font-mono">
@@ -297,8 +288,7 @@ export const DatasetFusionEngine: React.FC = () => {
       {activeDatasetTab === 'fusionMatrix' && (
         <div className="bg-gov-card p-6 sm:p-8 rounded-sm border border-gov-border  space-y-6">
           <div className="border-b border-gov-border pb-4">
-            <h3 className="text-xl font-bold text-gov-text flex items-center gap-2">
-              <Layers className="w-5 h-5 text-gov-navy" />
+            <h3 className="text-xl font-bold text-gov-text">
               The 4-Way Big Data Fusion Pipeline
             </h3>
             <p className="text-xs text-gov-muted mt-1">

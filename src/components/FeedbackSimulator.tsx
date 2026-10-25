@@ -5,8 +5,6 @@ import {
   MessageSquare,
   PhoneCall,
   Smartphone,
-  Cpu,
-  Layers,
   ArrowRight,
   CheckCircle2,
   AlertTriangle,
@@ -69,7 +67,6 @@ export const FeedbackSimulator: React.FC = () => {
       {/* Header Banner */}
       <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-3">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gov-teal-soft text-gov-teal border border-gov-teal">
-          <Cpu className="w-3.5 h-3.5" />
           Multilingual Ingestion & Bhashini ASR Pipeline
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -89,7 +86,7 @@ export const FeedbackSimulator: React.FC = () => {
               onClick={() => handleSelectSample(sample)}
               className={`px-3 py-2 rounded-sm text-xs font-semibold whitespace-nowrap transition-all cursor-pointer flex items-center gap-2 ${
                 selectedSim.id === sample.id
-                  ? 'bg-gov-navy text-gov-text shadow-md'
+                  ? 'bg-gov-navy text-white shadow-md'
                   : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft'
               }`}
             >
@@ -173,8 +170,7 @@ export const FeedbackSimulator: React.FC = () => {
         <div className="lg:col-span-7 space-y-4">
           <div className="bg-gov-card p-6 rounded-sm border border-gov-border  space-y-5">
             <div className="flex items-center justify-between border-b border-gov-border pb-3">
-              <span className="text-xs font-bold text-gov-success uppercase tracking-wider flex items-center gap-1.5">
-                <Cpu className="w-4 h-4" />
+              <span className="text-xs font-bold text-gov-success uppercase tracking-wider">
                 Live 4-Stage AI Triangulation Pipeline
               </span>
               <span
@@ -246,8 +242,7 @@ export const FeedbackSimulator: React.FC = () => {
             {/* PM GatiShakti Triangulation Result */}
             <div className="bg-gov-card p-4 rounded-sm border border-gov-border space-y-3">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-bold text-gov-navy flex items-center gap-1.5">
-                  <Layers className="w-4 h-4 text-gov-teal" />
+                <span className="font-bold text-gov-navy">
                   PM GatiShakti Masterplan Reconciled Match
                 </span>
                 <span className="font-mono text-[11px] text-gov-success">

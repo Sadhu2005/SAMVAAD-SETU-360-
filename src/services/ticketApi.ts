@@ -33,6 +33,21 @@ export async function apiTrackTicket(
   return { case: data.case, auditLogs: data.auditLogs || [], masked: data.masked };
 }
 
+export async function apiAttachTicketMedia(
+  trackingId: string,
+  last4: string,
+  media: { voiceUrl?: string; photoUrl?: string }
+): Promise<CitizenCase> {
+  const res = await fetch(`${API}/tickets/${encodeURIComponent(trackingId)}/media`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ last4, ...media }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Media attach failed');
+  return data.case;
+}
+
 export async function apiVerifyTicket(
   trackingId: string,
   last4: string,

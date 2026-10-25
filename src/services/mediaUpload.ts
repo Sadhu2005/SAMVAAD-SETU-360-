@@ -1,15 +1,24 @@
 import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import { storage, isFirebaseConfigured } from './firebase';
 
+/** Browser Storage uploads need a bucket CORS policy. Off by default so voice/photo persist as data URLs. */
+export function shouldUploadToFirebaseStorage(): boolean {
+  return (
+    import.meta.env.VITE_FIREBASE_STORAGE_UPLOADS === 'true' &&
+    isFirebaseConfigured() &&
+    Boolean(storage)
+  );
+}
+
 export async function uploadTicketMedia(
   trackingId: string,
   kind: 'voice' | 'photo' | 'proof',
   dataUrl: string
 ): Promise<string> {
-  if (isFirebaseConfigured() && storage && dataUrl.startsWith('data:')) {
+  if (shouldUploadToFirebaseStorage() && dataUrl.startsWith('data:')) {
     try {
       const path = `tickets/${trackingId}/${kind}-${Date.now()}`;
-      const storageRef = ref(storage, path);
+      const storageRef = ref(storage!, path);
       await uploadString(storageRef, dataUrl, 'data_url');
       return await getDownloadURL(storageRef);
     } catch (err) {

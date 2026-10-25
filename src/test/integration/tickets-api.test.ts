@@ -5,6 +5,7 @@ import {
   getCaseByTrackingId,
   getAllCases,
   updateCaseByOfficer,
+  attachCitizenMedia,
   citizenVerifyResolution,
   filterOfficerInbox,
 } from '../../services/caseService';
@@ -56,6 +57,20 @@ function createTicketApp() {
       district: req.query.district as string | undefined,
     });
     res.json({ success: true, cases });
+  });
+
+  v1.post('/tickets/:id/media', async (req, res) => {
+    try {
+      const updated = await attachCitizenMedia({
+        trackingId: req.params.id,
+        last4: String(req.body.last4 || ''),
+        voiceUrl: req.body.voiceUrl,
+        photoUrl: req.body.photoUrl,
+      });
+      res.status(201).json({ success: true, case: updated });
+    } catch (e: any) {
+      res.status(400).json({ success: false, error: e.message });
+    }
   });
 
   v1.post('/tickets/:id/verify', async (req, res) => {
@@ -160,5 +175,68 @@ describe('Integration: ticket aliases, inbox PIN, verify, close reject', () => {
     });
     expect(close.status).toBe(400);
     expect(close.body.success).toBe(false);
+  });
+
+  it('attaches media via POST /api/v1/tickets/:id/media with version header', async () => {
+    const created = await invoke(app, {
+      method: 'POST',
+      url: '/api/v1/tickets',
+      body: {
+        title: 'Snapped feeder',
+        description: 'No evening supply',
+        category: 'Power & Electrification',
+        district: 'Nuh',
+        state: 'Haryana',
+        contactNumber: '8111100009',
+      },
+    });
+    const media = await invoke(app, {
+      method: 'POST',
+      url: `/api/v1/tickets/${created.body.trackingId}/media`,
+      params: { id: created.body.trackingId },
+      body: { last4: '0009', photoUrl: 'https://example.test/feeder.jpg' },
+    });
+    expect(media.status).toBe(201);
+    expect(media.headers['X-API-Version']).toBe('1.0.0');
+    expect(media.body.case.photoUrl).toBe('https://example.test/feeder.jpg');
+  });
+
+  it('rejects officer proof and start-work while the ticket is still submitted', async () => {
+    const created = await invoke(app, {
+      method: 'POST',
+      url: '/api/v1/tickets',
+      body: {
+        title: 'Broken culvert',
+        description: 'Approach washed out',
+        category: 'Bridges & Culverts',
+        district: 'Bastar',
+        state: 'Chhattisgarh',
+        contactNumber: '9000098765',
+      },
+    });
+
+    const proof = await invoke(app, {
+      method: 'POST',
+      url: `/api/v1/tickets/${created.body.trackingId}/action`,
+      headers: { 'x-officer-pin': 'setu-desk-2026' },
+      params: { id: created.body.trackingId },
+      body: {
+        status: 'proof_uploaded',
+        officerName: 'JE',
+        completionProof: { notes: 'Done' },
+      },
+    });
+    expect(proof.status).toBe(400);
+    expect(proof.body.error).toMatch(/assigned/i);
+
+    const start = await invoke(app, {
+      method: 'POST',
+      url: `/api/v1/tickets/${created.body.trackingId}/action`,
+      headers: { 'x-officer-pin': 'setu-desk-2026' },
+      params: { id: created.body.trackingId },
+      body: { status: 'in_progress', officerName: 'JE' },
+    });
+    expect(start.status).toBe(400);
+    expect(start.body.error).toMatch(/Invalid status jump/i);
   });
 });

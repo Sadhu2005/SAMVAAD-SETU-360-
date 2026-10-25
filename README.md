@@ -1,12 +1,12 @@
 # SAMVAAD-SETU 360° (संवाद सेतु)
 ### AI-Powered Multilingual Digital Public Good for Citizen Feedback to National Masterplan Infrastructure Alignment
 
-[![BRICS 2026 Innovation](https://img.shields.io/badge/BRICS_2026-Innovation_Track_1-F59E0B?style=for-the-badge)](https://brics-info.org)
-[![Digital Public Good](https://img.shields.io/badge/DPGA-Digital_Public_Good-10B981?style=for-the-badge)](https://digitalpublicgoods.net)
-[![Live Demo](https://img.shields.io/badge/LIVE_DEMO-Launch_Interactive_Prototype-10B981?style=for-the-badge&logo=googlechrome&logoColor=white)](https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/)
-[![Bhashini AI](https://img.shields.io/badge/Bhashini-22+_Indic_Languages-6366F1?style=for-the-badge)](https://bhashini.gov.in)
-[![PM GatiShakti](https://img.shields.io/badge/PM_GatiShakti-1400+_GIS_Layers-06B6D4?style=for-the-badge)](https://gatishakti.gov.in)
-[![DPDP Act 2023](https://img.shields.io/badge/Compliance-DPDP_Act_2023-EC4899?style=for-the-badge)](https://www.meity.gov.in)
+- [BRICS 2026 Innovation Track 1](https://brics-info.org)
+- [Digital Public Goods Alliance](https://digitalpublicgoods.net)
+- [Live prototype](https://ais-dev-ddptwvkz4i4x6xm32fjel5-669677889121.asia-southeast1.run.app/)
+- [Bhashini](https://bhashini.gov.in)
+- [PM GatiShakti](https://gatishakti.gov.in)
+- [DPDP Act 2023](https://www.meity.gov.in)
 
 ---
 

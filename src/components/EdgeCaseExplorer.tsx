@@ -6,8 +6,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowRight,
-  Cpu,
-  Layers,
   ChevronDown,
   ChevronUp,
   RefreshCw,
@@ -88,7 +86,7 @@ export const EdgeCaseExplorer: React.FC = () => {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-sm text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
+                className={`min-h-11 px-3 py-2 rounded-sm text-sm font-semibold whitespace-nowrap cursor-pointer ${
                   selectedCategory === cat
                     ? 'bg-gov-teal text-white shadow-md'
                     : 'bg-gov-inset text-gov-muted hover:bg-gov-navy-soft hover:text-gov-text'
@@ -216,8 +214,7 @@ export const EdgeCaseExplorer: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                     {/* Architectural Components */}
                     <div className="bg-gov-inset/30 p-4 rounded-sm border border-gov-border space-y-2">
-                      <div className="text-xs font-semibold text-gov-muted flex items-center gap-1.5">
-                        <Layers className="w-3.5 h-3.5 text-gov-teal" />
+                      <div className="text-xs font-semibold text-gov-muted">
                         DPI Technical Building Blocks
                       </div>
                       <div className="flex flex-wrap gap-1.5">

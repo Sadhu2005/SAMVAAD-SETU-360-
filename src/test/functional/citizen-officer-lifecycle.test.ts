@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import {
   submitCitizenCase,
+  attachCitizenMedia,
   getCaseByTrackingId,
   updateCaseByOfficer,
   citizenVerifyResolution
 } from '../../services/caseService';
+import { officerActionBlockedReason } from '../../utils/ticketLogic';
 
 describe('Functional Test: End-to-End Citizen & Officer Operational Lifecycle', () => {
   it('should walk a real citizen need from intake to officer proof upload and citizen confirmation', async () => {
@@ -23,6 +25,31 @@ describe('Functional Test: End-to-End Citizen & Officer Operational Lifecycle', 
 
     expect(citizenCase.trackingId).toMatch(/^SETU-2026-CH-BAS-[A-F0-9]{4}$/);
     expect(citizenCase.status).toBe('submitted');
+    expect(officerActionBlockedReason(citizenCase.status, 'start_work')).toBeDefined();
+    expect(officerActionBlockedReason(citizenCase.status, 'proof')).toBeDefined();
+    await expect(
+      updateCaseByOfficer({
+        trackingId: citizenCase.trackingId,
+        status: 'in_progress',
+        officerName: 'Er. Alok Sharma',
+        officerRole: 'nodal_engineer',
+        remarks: 'Cannot start before assign.',
+      })
+    ).rejects.toThrow(/Invalid status jump/);
+
+    const withMedia = await attachCitizenMedia({
+      trackingId: citizenCase.trackingId,
+      last4: '2345',
+      photoUrl: 'https://example.test/citizen-site.jpg',
+      voiceUrl: 'https://example.test/citizen-voice.webm',
+    });
+    expect(withMedia.photoUrl).toBe('https://example.test/citizen-site.jpg');
+    expect(withMedia.voiceUrl).toBe('https://example.test/citizen-voice.webm');
+    expect(withMedia.status).toBe('submitted');
+
+    const afterAttach = await getCaseByTrackingId(citizenCase.trackingId);
+    expect(afterAttach.caseData?.photoUrl).toBe('https://example.test/citizen-site.jpg');
+    expect(afterAttach.caseData?.voiceUrl).toBe('https://example.test/citizen-voice.webm');
 
     // 2. Government officer inspects the queue and assigns department
     const assignedCase = await updateCaseByOfficer({

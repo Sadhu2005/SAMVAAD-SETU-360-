@@ -224,7 +224,7 @@ export const DeepResearchStudio: React.FC<DeepResearchStudioProps> = ({ onExport
 
               <button
                 onClick={onExportDocx}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs bg-gov-teal hover:bg-gov-teal text-gov-text font-semibold transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-xs bg-gov-teal text-white font-semibold transition-all cursor-pointer"
               >
                 <FileText className="w-3.5 h-3.5" />
                 Export in DOCX

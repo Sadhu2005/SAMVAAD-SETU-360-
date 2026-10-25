@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
 import {
-  Activity,
   CheckCircle2,
   TrendingUp,
   ShieldCheck,
   PhoneCall,
   Camera,
-  Layers,
   ArrowRight,
   FileCheck,
   RefreshCw
@@ -32,8 +30,7 @@ export const DpiImpactTracker: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       {/* Header Banner */}
       <div className="bg-gov-card text-gov-text p-6 sm:p-8 rounded-sm border border-gov-border  space-y-3">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-gov-success border border-emerald-500/30">
-          <Activity className="w-3.5 h-3.5" />
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-gov-success-bg text-gov-success border border-gov-success">
           DPI Impact Measurement & Post-Commissioning Evaluation
         </div>
         <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
@@ -178,7 +175,6 @@ export const DpiImpactTracker: React.FC = () => {
           {/* Gate 2 */}
           <div className={`p-4 rounded-sm border transition-all ${auditStep >= 2 ? 'bg-gov-inset border-emerald-500' : 'bg-gov-inset border-gov-border'}`}>
             <div className="flex items-center gap-2 mb-2">
-              <Layers className="w-4 h-4 text-gov-teal" />
               <span className="font-bold text-gov-text">Gate 2: Satellite SAR Check</span>
             </div>
             <p className="text-gov-muted text-[11px] leading-relaxed">
