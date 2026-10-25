@@ -25,6 +25,9 @@ blob-report/
 .env.production.local
 !.env.example
 
+# Firebase / AI Studio local config (contains Web API keys)
+firebase-applet-config.json
+
 # Logs
 logs/
 *.log

@@ -1,0 +1,13 @@
+{
+  "_comment": "DO NOT commit firebase-applet-config.json with real keys. Use .env VITE_FIREBASE_* instead (see .env.example).",
+  "projectId": "your-firebase-project-id",
+  "appId": "1:000000000000:web:0000000000000000000000",
+  "apiKey": "YOUR_FIREBASE_WEB_API_KEY",
+  "authDomain": "your-project.firebaseapp.com",
+  "firestoreDatabaseId": "your-named-firestore-database-id",
+  "storageBucket": "your-project.firebasestorage.app",
+  "messagingSenderId": "000000000000",
+  "measurementId": "",
+  "oAuthClientId": "000000000000-xxxxxxxx.apps.googleusercontent.com",
+  "recaptchaSiteKey": ""
+}

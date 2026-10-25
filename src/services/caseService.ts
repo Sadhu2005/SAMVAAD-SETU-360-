@@ -12,7 +12,11 @@ import {
   serverTimestamp,
   addDoc
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, isFirebaseConfigured } from './firebase';
+
+function canUseFirestore(): boolean {
+  return isFirebaseConfigured() && Boolean(db);
+}
 
 export type CaseStatus =
   | 'submitted'
@@ -217,10 +221,11 @@ export async function submitCitizenCase(params: {
 
   // 1. Try Firebase Firestore
   try {
-    const caseDocRef = doc(db, 'cases', trackingId);
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    const caseDocRef = doc(db!, 'cases', trackingId);
     await setDoc(caseDocRef, newCase);
 
-    const auditRef = collection(db, 'cases', trackingId, 'audit_logs');
+    const auditRef = collection(db!, 'cases', trackingId, 'audit_logs');
     await addDoc(auditRef, {
       caseId: trackingId,
       timestamp: now,
@@ -262,11 +267,12 @@ export async function getCaseByTrackingId(trackingId: string): Promise<{
 
   // 1. Try Firestore
   try {
-    const caseDocRef = doc(db, 'cases', cleanId);
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    const caseDocRef = doc(db!, 'cases', cleanId);
     const snap = await getDoc(caseDocRef);
     if (snap.exists()) {
       const caseData = snap.data() as CitizenCase;
-      const logsSnap = await getDocs(collection(db, 'cases', cleanId, 'audit_logs'));
+      const logsSnap = await getDocs(collection(db!, 'cases', cleanId, 'audit_logs'));
       const auditLogs: AuditLogEntry[] = [];
       logsSnap.forEach(d => auditLogs.push(d.data() as AuditLogEntry));
       auditLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -287,7 +293,8 @@ export async function getCaseByTrackingId(trackingId: string): Promise<{
  */
 export async function getAllCases(): Promise<CitizenCase[]> {
   try {
-    const snap = await getDocs(collection(db, 'cases'));
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    const snap = await getDocs(collection(db!, 'cases'));
     if (!snap.empty) {
       const list: CitizenCase[] = [];
       snap.forEach(d => list.push(d.data() as CitizenCase));
@@ -332,9 +339,10 @@ export async function updateCaseByOfficer(params: {
 
   // 1. Try Firestore
   try {
-    const caseDocRef = doc(db, 'cases', params.trackingId);
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    const caseDocRef = doc(db!, 'cases', params.trackingId);
     await updateDoc(caseDocRef, { ...caseData });
-    await addDoc(collection(db, 'cases', params.trackingId, 'audit_logs'), {
+    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
       caseId: params.trackingId,
       timestamp: now,
       actor: params.officerName,
@@ -393,9 +401,10 @@ export async function citizenVerifyResolution(params: {
   const detailsText = caseData.citizenFeedback.feedbackText || (params.verified ? 'Citizen verified on-ground completion.' : 'Citizen reported issue persists.');
 
   try {
-    const caseDocRef = doc(db, 'cases', params.trackingId);
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    const caseDocRef = doc(db!, 'cases', params.trackingId);
     await updateDoc(caseDocRef, { ...caseData });
-    await addDoc(collection(db, 'cases', params.trackingId, 'audit_logs'), {
+    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
       caseId: params.trackingId,
       timestamp: now,
       actor: caseData.citizenPhoneMasked,

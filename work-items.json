@@ -304,6 +304,52 @@
           "evidence": "Firebase Firestore provisioned, CitizenTrackPortal, GovernmentWorkSurface, API v1 routes, and 10/10 test files (23/23 tests) verified passing."
         }
       ]
+    },
+    {
+      "id": "FIX-001",
+      "order": 9,
+      "title": "Remove committed Firebase Web API key and move config to env",
+      "summary": "GitHub secret scanning: revoke leaked Google API key, gitignore firebase-applet-config.json, use VITE_FIREBASE_* only.",
+      "phase": "Security",
+      "owner": "engineering",
+      "priority": "P0",
+      "risk_tier": 3,
+      "authority": "owner_required",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": ["FEAT-001"],
+      "source": {
+        "path": "docs/security/firebase-key-rotation.md",
+        "section": "Leak response"
+      },
+      "scope": {
+        "write_globs": [
+          "src/config/**",
+          "src/services/firebase.ts",
+          "src/services/caseService.ts",
+          ".gitignore",
+          ".env.example",
+          "firebase-applet-config.example.json",
+          "docs/security/**",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "No live API keys in tracked files.",
+        "firebase-applet-config.json gitignored; example template committed.",
+        "Rotation runbook documented for owner in Google Cloud Console."
+      ],
+      "next_action": "Owner rotates key in GCP; mark GitHub alert revoked; push fix commit.",
+      "history": [
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T07:00:00.000Z",
+          "session_id": "cursor-agent-fix-001",
+          "evidence": "Removed tracked firebase-applet-config.json; env-based Firebase client; .env created locally; rotation runbook added."
+        }
+      ]
     }
   ]
 }

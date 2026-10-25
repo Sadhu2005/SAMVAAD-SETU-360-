@@ -281,11 +281,18 @@ npm install
 ```
 
 ### Environment Configuration
-Create a `.env` file in the root directory:
+Create a `.env` file in the root directory (see `.env.example` for all keys):
 ```env
 GEMINI_API_KEY="your-gemini-api-key"
 PORT=3000
+
+# Citizen/officer Firestore sync (optional — local case store works without these)
+VITE_FIREBASE_API_KEY="your-firebase-web-api-key"
+VITE_FIREBASE_PROJECT_ID="your-project-id"
+# ...other VITE_FIREBASE_* from Firebase Console
 ```
+
+Do **not** commit `firebase-applet-config.json` or real API keys. If a key was ever pushed to GitHub, rotate it in Google Cloud and follow [docs/security/firebase-key-rotation.md](docs/security/firebase-key-rotation.md).
 
 ### Start Development Server
 ```bash
