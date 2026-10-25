@@ -612,6 +612,170 @@
           "evidence": "HMR on same HTTP server; omitUndefined Firestore writes; Storage opt-in; officer actions gated. npm run test:all — 46/46 tests."
         }
       ]
+    },
+    {
+      "id": "FEAT-005",
+      "order": 14,
+      "title": "India state/district master with GET geo APIs and select fields",
+      "summary": "Replace free-text State and District with LGD-style official selects, store codes on tickets, and serve GET /api/v1/geo/* from Firestore with bundled fallback.",
+      "phase": "Operational loop",
+      "owner": "full-stack",
+      "priority": "P0",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FIX-002"
+      ],
+      "source": {
+        "path": "src/services/geoService.ts",
+        "section": "resolveGeoLocation"
+      },
+      "scope": {
+        "write_globs": [
+          "src/data/**",
+          "src/services/**",
+          "src/components/**",
+          "src/test/**",
+          "src/utils/**",
+          "server.ts",
+          "docs/security/**",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "GET /api/v1/geo/states and /api/v1/geo/districts?stateCode= return official India lists with X-API-Version.",
+        "Citizen form and officer inbox use State then District selects, not free text.",
+        "Tickets store stateLgdCode, districtLgdCode, stateIsoCode plus display names.",
+        "Unknown state/district is rejected on submit.",
+        "Tracking IDs use ISO state code, not the first two letters of the name.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.6.0-india-geo-master.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T09:15:38.709Z",
+          "session_id": "cursor-agent-feat-005",
+          "evidence": "Claimed work item FEAT-005 with active write scopes: src/data/**, src/services/**, src/components/**, src/test/**, src/utils/**, server.ts, docs/security/**, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T09:18:45.960Z",
+          "session_id": "agent-session-verified",
+          "evidence": "India LGD-style state/district master, GET /api/v1/geo/*, selects on citizen and officer desk. npm run test:all — 54/54 tests."
+        }
+      ]
+    },
+    {
+      "id": "FEAT-006",
+      "order": 15,
+      "title": "Valid Indian mobile required; voice replay and re-record",
+      "summary": "Require a valid 10-digit Indian mobile on submit, and let citizens play back, re-record, or remove a voice note before filing.",
+      "phase": "Operational loop",
+      "owner": "full-stack",
+      "priority": "P0",
+      "risk_tier": 1,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-005"
+      ],
+      "source": {
+        "path": "src/utils/ticketLogic.ts",
+        "section": "isValidIndianMobile"
+      },
+      "scope": {
+        "write_globs": [
+          "src/utils/**",
+          "src/services/**",
+          "src/components/**",
+          "src/test/**",
+          "server.ts",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "Invalid or missing Indian mobile is rejected on the citizen form and POST /api/v1/tickets.",
+        "Citizen can play the recorded voice note, record again, or remove it before submit.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.6.1-phone-voice-check.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T09:23:01.941Z",
+          "session_id": "cursor-agent-feat-006",
+          "evidence": "Claimed work item FEAT-006 with active write scopes: src/utils/**, src/services/**, src/components/**, src/test/**, server.ts, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T09:24:12.257Z",
+          "session_id": "agent-session-verified",
+          "evidence": "Valid Indian mobile required; voice replay and re-record. npm run test:all — 58/58 tests."
+        }
+      ]
+    },
+    {
+      "id": "FEAT-007",
+      "order": 16,
+      "title": "Header Menu page for briefing navigation",
+      "summary": "Replace the wrapping briefing link row with a Menu control in the header that opens a dedicated civic menu page.",
+      "phase": "Civic UI",
+      "owner": "frontend",
+      "priority": "P1",
+      "risk_tier": 1,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-006"
+      ],
+      "source": {
+        "path": "src/components/MenuPage.tsx",
+        "section": "portal menu"
+      },
+      "scope": {
+        "write_globs": [
+          "src/data/**",
+          "src/components/**",
+          "src/App.tsx",
+          "src/test/**",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "Header shows Citizen, Government, and Menu without a wrapping briefing link row.",
+        "Menu page lists ticket and briefing destinations and navigates to them.",
+        "Deep link ?view=menu opens the menu page.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.6.2-header-menu.",
+      "history": [
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T09:27:03.877Z",
+          "session_id": "cursor-agent-feat-007",
+          "evidence": "Claimed work item FEAT-007 with active write scopes: src/data/**, src/components/**, src/App.tsx, src/test/**, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T09:28:18.201Z",
+          "session_id": "agent-session-verified",
+          "evidence": "Header Menu page for briefing nav. npm run test:all — 60/60 tests."
+        }
+      ]
     }
   ]
 }

@@ -23,7 +23,7 @@ describe('Functional Test: End-to-End Citizen & Officer Operational Lifecycle', 
       urgency: 'Critical',
     });
 
-    expect(citizenCase.trackingId).toMatch(/^SETU-2026-CH-BAS-[A-F0-9]{4}$/);
+    expect(citizenCase.trackingId).toMatch(/^SETU-2026-CG-BAS-[A-F0-9]{4}$/);
     expect(citizenCase.status).toBe('submitted');
     expect(officerActionBlockedReason(citizenCase.status, 'start_work')).toBeDefined();
     expect(officerActionBlockedReason(citizenCase.status, 'proof')).toBeDefined();

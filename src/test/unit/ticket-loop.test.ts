@@ -4,6 +4,8 @@ import {
   isSlaBreached,
   enforceGovernmentWorkflowGuards,
   extractPhoneLast4,
+  isValidIndianMobile,
+  normalizeIndianMobile,
   omitUndefined,
   officerActionBlockedReason,
 } from '../../utils/ticketLogic';
@@ -20,6 +22,15 @@ describe('Unit: real ticket identity, SLA, and close guards', () => {
     expect(tok.maskedContact).not.toContain('987654');
   });
 
+  it('accepts only a valid 10-digit Indian mobile', () => {
+    expect(normalizeIndianMobile('+91 98765 43210')).toBe('9876543210');
+    expect(normalizeIndianMobile('09876543210')).toBe('9876543210');
+    expect(isValidIndianMobile('9876543210')).toBe(true);
+    expect(isValidIndianMobile('2337132156748210')).toBe(false);
+    expect(isValidIndianMobile('1234567890')).toBe(false);
+    expect(isValidIndianMobile('')).toBe(false);
+  });
+
   it('flags SLA breach after deadline hours', () => {
     const created = new Date('2026-01-01T00:00:00Z').toISOString();
     expect(isSlaBreached(created, 24, Date.parse('2026-01-01T12:00:00Z'))).toBe(false);
@@ -27,7 +38,7 @@ describe('Unit: real ticket identity, SLA, and close guards', () => {
   });
 
   it('keeps SETU tracking IDs and blocks close without citizen OK', () => {
-    expect(generateTrackingId('Chhattisgarh', 'Bastar')).toMatch(/^SETU-2026-CH-BAS-[A-F0-9]{4}$/);
+    expect(generateTrackingId('Chhattisgarh', 'Bastar')).toMatch(/^SETU-2026-CG-BAS-[A-F0-9]{4}$/);
     const blocked = enforceGovernmentWorkflowGuards({
       currentStatus: 'in_progress',
       targetStatus: 'closed',

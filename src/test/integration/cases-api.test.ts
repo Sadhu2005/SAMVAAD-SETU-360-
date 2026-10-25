@@ -98,7 +98,7 @@ describe('Integration Test: API v1 Citizen Case Routes', () => {
     expect(headers['X-API-Version']).toBe('1.0.0');
     expect(statusCode).toBe(201);
     expect(jsonBody.success).toBe(true);
-    expect(jsonBody.trackingId).toMatch(/^SETU-2026-CH-DAN-[A-F0-9]{4}$/);
+    expect(jsonBody.trackingId).toMatch(/^SETU-2026-CG-DAN-[A-F0-9]{4}$/);
     expect(jsonBody.case.status).toBe('submitted');
   });
 

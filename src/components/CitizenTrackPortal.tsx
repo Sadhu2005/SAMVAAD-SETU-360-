@@ -13,8 +13,10 @@ import {
 } from 'lucide-react';
 import type { AuditLogEntry, CitizenCase } from '../services/caseService';
 import { apiAttachTicketMedia, apiSubmitTicket, apiTrackTicket, apiVerifyTicket } from '../services/ticketApi';
+import { apiListDistricts, apiListStates } from '../services/geoApi';
 import { fileToDataUrl, uploadTicketMedia } from '../services/mediaUpload';
-import { CITIZEN_STATUS_LABEL, type CaseStatus } from '../utils/ticketLogic';
+import { CITIZEN_STATUS_LABEL, isValidIndianMobile, type CaseStatus } from '../utils/ticketLogic';
+import type { GeoDistrict, GeoState } from '../services/geoService';
 
 interface CitizenTrackPortalProps {
   initialTrackingId?: string;
@@ -45,6 +47,9 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
   const [village, setVillage] = useState('');
   const [district, setDistrict] = useState('');
   const [stateName, setStateName] = useState('');
+  const [states, setStates] = useState<GeoState[]>([]);
+  const [districts, setDistricts] = useState<GeoDistrict[]>([]);
+  const [stateCode, setStateCode] = useState('');
   const [phone, setPhone] = useState('');
   const [category, setCategory] = useState<CitizenCase['category']>('Bridges & Culverts');
   const [submitting, setSubmitting] = useState(false);
@@ -64,6 +69,20 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
     }
   }, [initialTrackingId]);
 
+  useEffect(() => {
+    void apiListStates().then(setStates);
+  }, []);
+
+  useEffect(() => {
+    if (!stateCode) {
+      setDistricts([]);
+      setDistrict('');
+      return;
+    }
+    setDistrict('');
+    void apiListDistricts(Number(stateCode)).then(setDistricts);
+  }, [stateCode]);
+
   const shareUrl = (id: string) => {
     const url = new URL(window.location.href);
     url.searchParams.set('view', 'citizen');
@@ -74,8 +93,18 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!title.trim() || !description.trim() || !district.trim() || !stateName.trim() || !phone.trim()) {
-      setError('Please fill title, description, district, state, and phone.');
+    const missing: string[] = [];
+    if (!title.trim()) missing.push('title');
+    if (!description.trim()) missing.push('description');
+    if (!stateName.trim()) missing.push('state');
+    if (!district.trim()) missing.push('district');
+    if (!phone.trim()) missing.push('mobile');
+    if (missing.length) {
+      setError(`Please fill ${missing.join(', ')}.`);
+      return;
+    }
+    if (!isValidIndianMobile(phone)) {
+      setError('Enter a valid 10-digit Indian mobile starting with 6, 7, 8, or 9.');
       return;
     }
     setSubmitting(true);
@@ -130,27 +159,37 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
   };
 
   const startRecording = async () => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const rec = new MediaRecorder(stream);
-    chunksRef.current = [];
-    rec.ondataavailable = (ev) => {
-      if (ev.data.size) chunksRef.current.push(ev.data);
-    };
-    rec.onstop = async () => {
-      const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
-      const reader = new FileReader();
-      reader.onload = () => setVoiceData(String(reader.result || ''));
-      reader.readAsDataURL(blob);
-      stream.getTracks().forEach((t) => t.stop());
-    };
-    mediaRef.current = rec;
-    rec.start();
-    setRecording(true);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      chunksRef.current = [];
+      rec.ondataavailable = (ev) => {
+        if (ev.data.size) chunksRef.current.push(ev.data);
+      };
+      rec.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        const reader = new FileReader();
+        reader.onload = () => setVoiceData(String(reader.result || ''));
+        reader.readAsDataURL(blob);
+        stream.getTracks().forEach((t) => t.stop());
+      };
+      mediaRef.current = rec;
+      rec.start();
+      setRecording(true);
+      setError(null);
+    } catch {
+      setError('Microphone permission is required to record a voice note.');
+    }
   };
 
   const stopRecording = () => {
     mediaRef.current?.stop();
     setRecording(false);
+  };
+
+  const clearVoice = () => {
+    if (recording) stopRecording();
+    setVoiceData('');
   };
 
   const onPhoto = async (file?: File) => {
@@ -234,6 +273,7 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
               onChange={(e) => setTitle(e.target.value)}
               className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
               placeholder="e.g. Culvert washed away"
+              required
             />
           </label>
           <label className="block space-y-1">
@@ -243,6 +283,7 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
               onChange={(e) => setDescription(e.target.value)}
               rows={4}
               className="w-full rounded-sm bg-gov-inset border border-gov-border px-3 py-2 text-gov-text"
+              required
             />
           </label>
           <label className="block space-y-1">
@@ -257,29 +298,64 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
               ))}
             </select>
           </label>
+          <label className="block space-y-1">
+            <span className="text-sm font-semibold text-gov-text">State</span>
+            <select
+              value={stateCode}
+              onChange={(e) => {
+                const code = e.target.value;
+                setStateCode(code);
+                const match = states.find((s) => String(s.lgdCode) === code);
+                setStateName(match?.name || '');
+              }}
+              className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
+              required
+            >
+              <option value="">Select state or UT</option>
+              {states.map((s) => (
+                <option key={s.lgdCode} value={s.lgdCode}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block space-y-1">
+              <span className="text-sm font-semibold text-gov-text">District</span>
+              <select
+                value={district}
+                onChange={(e) => setDistrict(e.target.value)}
+                className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
+                required
+                disabled={!stateCode}
+              >
+                <option value="">{stateCode ? 'Select district' : 'Select state first'}</option>
+                {districts.map((d) => (
+                  <option key={d.lgdCode} value={d.name}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="block space-y-1">
               <span className="text-sm font-semibold text-gov-text">Village</span>
               <input value={village} onChange={(e) => setVillage(e.target.value)} className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text" />
             </label>
-            <label className="block space-y-1">
-              <span className="text-sm font-semibold text-gov-text">District</span>
-              <input value={district} onChange={(e) => setDistrict(e.target.value)} className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text" required />
-            </label>
           </div>
           <label className="block space-y-1">
-            <span className="text-sm font-semibold text-gov-text">State</span>
-            <input value={stateName} onChange={(e) => setStateName(e.target.value)} className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text" required />
-          </label>
-          <label className="block space-y-1">
-            <span className="text-sm font-semibold text-gov-text">Mobile (hashed, last 4 used to track)</span>
+            <span className="text-sm font-semibold text-gov-text">Mobile (required)</span>
             <input
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
               inputMode="tel"
+              autoComplete="tel"
+              maxLength={15}
+              placeholder="10-digit mobile, e.g. 98765 43210"
+              aria-required="true"
               className="w-full min-h-11 rounded-sm bg-gov-inset border border-gov-border px-3 text-gov-text"
               required
             />
+            <span className="text-xs text-gov-muted">Indian mobile starting with 6, 7, 8 or 9. Last 4 digits unlock tracking.</span>
           </label>
           <div className="flex flex-wrap gap-2">
             <button type="button" onClick={useMyLocation} className="min-h-11 px-3 rounded-sm bg-gov-inset border border-gov-border text-sm flex items-center gap-2">
@@ -295,13 +371,31 @@ export const CitizenTrackPortal: React.FC<CitizenTrackPortalProps> = ({ initialT
               className="min-h-11 px-3 rounded-sm bg-gov-inset border border-gov-border text-sm flex items-center gap-2"
             >
               {recording ? <Square className="w-4 h-4 text-gov-error" /> : <Mic className="w-4 h-4" />}
-              {recording ? 'Stop voice' : 'Voice note'}
+              {recording ? 'Stop voice' : voiceData ? 'Record again' : 'Voice note'}
             </button>
           </div>
-          {(photoData || voiceData || lat) && (
+          {recording && (
+            <p className="text-sm text-gov-error font-semibold">Recording… tap Stop, then play it back to check.</p>
+          )}
+          {voiceData && !recording && (
+            <div className="space-y-2 border border-gov-border bg-gov-inset p-3">
+              <p className="text-sm font-semibold text-gov-navy">Check your voice note</p>
+              <audio controls src={voiceData} className="w-full">
+                Your browser does not support audio.
+              </audio>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={startRecording} className="min-h-11 px-3 rounded-sm bg-gov-navy text-white text-sm font-semibold">
+                  Record again
+                </button>
+                <button type="button" onClick={clearVoice} className="min-h-11 px-3 rounded-sm bg-gov-inset border border-gov-border text-sm font-semibold">
+                  Remove voice
+                </button>
+              </div>
+            </div>
+          )}
+          {(photoData || lat) && (
             <p className="text-xs text-gov-success">
               {photoData && 'Photo attached. '}
-              {voiceData && 'Voice attached. '}
               {lat && lng && `Pin ${lat.toFixed(3)}, ${lng.toFixed(3)}`}
             </p>
           )}

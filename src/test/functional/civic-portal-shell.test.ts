@@ -8,6 +8,8 @@ describe('Functional: light civic portal journey surfaces', () => {
   const app = fs.readFileSync(path.join(root, 'App.tsx'), 'utf-8');
   const citizen = fs.readFileSync(path.join(root, 'components/CitizenTrackPortal.tsx'), 'utf-8');
   const government = fs.readFileSync(path.join(root, 'components/GovernmentWorkSurface.tsx'), 'utf-8');
+  const header = fs.readFileSync(path.join(root, 'components/Header.tsx'), 'utf-8');
+  const menu = fs.readFileSync(path.join(root, 'components/MenuPage.tsx'), 'utf-8');
 
   it('keeps citizen submit/track and government inbox on the same light portal', () => {
     expect(app).toContain('<CitizenTrackPortal');
@@ -17,7 +19,16 @@ describe('Functional: light civic portal journey surfaces', () => {
     expect(css).toContain('.gov-masthead');
     expect(citizen).toContain('bg-gov-card');
     expect(citizen).toContain('bg-gov-teal text-white');
+    expect(citizen).toContain('Mobile (required)');
+    expect(citizen).toContain('Check your voice note');
+    expect(citizen).toContain('Record again');
+    expect(citizen).toContain('<audio controls');
     expect(government).toContain('bg-gov-card');
     expect(government).toContain('bg-gov-navy-soft');
+    expect(app).toContain('<MenuPage');
+    expect(app).toContain("menu: MENU_TAB_ID");
+    expect(header).toContain('MENU_TAB_ID');
+    expect(header).toContain('Menu');
+    expect(menu).toContain('Choose a ticket desk or a briefing page.');
   });
 });

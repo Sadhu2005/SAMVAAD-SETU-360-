@@ -17,21 +17,25 @@ import { DpiImpactTracker } from './components/DpiImpactTracker';
 import { PolicymakerDossier } from './components/PolicymakerDossier';
 import { DeepResearchStudio } from './components/DeepResearchStudio';
 import { DocxStudio } from './components/DocxStudio';
+import { MenuPage } from './components/MenuPage';
 import { generateSamvaadSetuDocx } from './utils/docxExport';
 import { CheckCircle2, Download } from 'lucide-react';
+import { MENU_TAB_ID, isPortalTab } from './data/portalMenu';
 
 const VIEW_TO_TAB: Record<string, string> = {
   citizen: 'citizen-portal',
   gov: 'government-desk',
   prototype: 'prototype',
   overview: 'overview',
+  menu: MENU_TAB_ID,
 };
 
 function readDeepLink(): { tab: string; id?: string } {
   const params = new URLSearchParams(window.location.search);
   const view = params.get('view') || '';
   const id = params.get('id') || undefined;
-  return { tab: VIEW_TO_TAB[view] || 'citizen-portal', id };
+  const mapped = VIEW_TO_TAB[view] || view;
+  return { tab: isPortalTab(mapped) ? mapped : 'citizen-portal', id };
 }
 
 export default function App() {
@@ -46,7 +50,15 @@ export default function App() {
     setDeepLinkId(id);
     const params = new URLSearchParams(window.location.search);
     const view =
-      tab === 'citizen-portal' ? 'citizen' : tab === 'government-desk' ? 'gov' : tab === 'prototype' ? 'prototype' : tab;
+      tab === 'citizen-portal'
+        ? 'citizen'
+        : tab === 'government-desk'
+          ? 'gov'
+          : tab === MENU_TAB_ID
+            ? 'menu'
+            : tab === 'prototype'
+              ? 'prototype'
+              : tab;
     params.set('view', view);
     if (id) params.set('id', id);
     else params.delete('id');
@@ -101,6 +113,8 @@ export default function App() {
       )}
 
       <main id="main-content" tabIndex={-1} className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 sm:py-8">
+        {activeTab === MENU_TAB_ID && <MenuPage activeTab={activeTab} onSelect={(tab) => navigateTab(tab)} />}
+
         {activeTab === 'citizen-portal' && <CitizenTrackPortal initialTrackingId={deepLinkId} />}
 
         {activeTab === 'government-desk' && <GovernmentWorkSurface initialTrackingId={deepLinkId} />}

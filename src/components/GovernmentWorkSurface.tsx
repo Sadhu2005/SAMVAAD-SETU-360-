@@ -22,6 +22,8 @@ import {
   type OfficerRoleKey,
 } from '../utils/ticketLogic';
 import { fileToDataUrl, uploadTicketMedia } from '../services/mediaUpload';
+import { apiListDistricts, apiListStates } from '../services/geoApi';
+import type { GeoDistrict, GeoState } from '../services/geoService';
 
 const ROLES: { id: OfficerRoleKey; label: string }[] = [
   { id: 'district_officer', label: 'District officer' },
@@ -42,6 +44,9 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [district, setDistrict] = useState('');
+  const [stateFilter, setStateFilter] = useState('');
+  const [states, setStates] = useState<GeoState[]>([]);
+  const [districts, setDistricts] = useState<GeoDistrict[]>([]);
   const [urgency, setUrgency] = useState('');
   const [department, setDepartment] = useState('');
   const [slaOnly, setSlaOnly] = useState(false);
@@ -58,8 +63,24 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
   }, []);
 
   useEffect(() => {
+    void apiListStates().then(setStates);
+  }, []);
+
+  useEffect(() => {
+    if (!stateFilter) {
+      setDistricts([]);
+      setDistrict('');
+      return;
+    }
+    const match = states.find((s) => s.name === stateFilter);
+    setDistrict('');
+    if (!match) return;
+    void apiListDistricts(match.lgdCode).then(setDistricts);
+  }, [stateFilter, states]);
+
+  useEffect(() => {
     if (session) void loadInbox();
-  }, [session, district, urgency, department, slaOnly]);
+  }, [session, district, stateFilter, urgency, department, slaOnly]);
 
   const loadInbox = async () => {
     setLoading(true);
@@ -67,6 +88,7 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
     try {
       const list = await apiOfficerInbox({
         district: district || undefined,
+        state: stateFilter || undefined,
         urgency: urgency || undefined,
         department: department || undefined,
         slaBreach: slaOnly || undefined,
@@ -222,7 +244,31 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
 
       <div className="flex flex-wrap gap-2 items-end bg-gov-card border border-gov-border rounded-sm p-3">
         <Filter className="w-4 h-4 text-gov-muted" />
-        <input value={district} onChange={(e) => setDistrict(e.target.value)} placeholder="District" className="min-h-11 rounded-sm bg-gov-inset border border-gov-border px-2 text-sm" />
+        <select
+          value={stateFilter}
+          onChange={(e) => setStateFilter(e.target.value)}
+          className="min-h-11 rounded-sm bg-gov-inset border border-gov-border px-2 text-sm"
+        >
+          <option value="">All states</option>
+          {states.map((s) => (
+            <option key={s.lgdCode} value={s.name}>
+              {s.name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={district}
+          onChange={(e) => setDistrict(e.target.value)}
+          disabled={!stateFilter}
+          className="min-h-11 rounded-sm bg-gov-inset border border-gov-border px-2 text-sm disabled:opacity-50"
+        >
+          <option value="">{stateFilter ? 'All districts' : 'Select state first'}</option>
+          {districts.map((d) => (
+            <option key={d.lgdCode} value={d.name}>
+              {d.name}
+            </option>
+          ))}
+        </select>
         <select value={urgency} onChange={(e) => setUrgency(e.target.value)} className="min-h-11 rounded-sm bg-gov-inset border border-gov-border px-2 text-sm">
           <option value="">All urgency</option>
           <option>Critical</option>

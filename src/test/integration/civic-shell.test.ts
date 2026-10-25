@@ -20,10 +20,11 @@ describe('Integration: civic app shell contracts', () => {
   });
 
   it('lists Citizen and Government as text navigation first', () => {
-    expect(header).toContain("label: 'Citizen'");
-    expect(header).toContain("label: 'Government'");
+    expect(header).toContain('PRODUCT_TABS');
+    expect(header).toContain('Menu');
     expect(header).not.toContain('Sparkles');
     expect(header).not.toContain('Globe2');
     expect(header).not.toContain('सं');
+    expect(header).not.toContain('aria-label="Briefing"');
   });
 });

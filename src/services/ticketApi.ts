@@ -66,12 +66,14 @@ export async function apiVerifyTicket(
 
 export async function apiOfficerInbox(filters?: {
   district?: string;
+  state?: string;
   urgency?: string;
   department?: string;
   slaBreach?: boolean;
 }): Promise<CitizenCase[]> {
   const params = new URLSearchParams();
   if (filters?.district) params.set('district', filters.district);
+  if (filters?.state) params.set('state', filters.state);
   if (filters?.urgency) params.set('urgency', filters.urgency);
   if (filters?.department) params.set('department', filters.department);
   if (filters?.slaBreach) params.set('slaBreach', '1');

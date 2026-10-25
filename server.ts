@@ -16,6 +16,7 @@ import {
   appendCaseNote,
 } from './src/services/caseService';
 import { last4Matches, maskCaseForPublic } from './src/utils/ticketLogic';
+import { getDistrictsFromStore, getStatesFromStore } from './src/services/geoService';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -69,6 +70,8 @@ v1Router.get('/meta', (_req: Request, res: Response) => {
       { path: '/api/v1/tickets/:id/proof', method: 'POST', description: 'Officer upload completion proof' },
       { path: '/api/v1/tickets/:id/verify', method: 'POST', description: 'Citizen yes/no verification' },
       { path: '/api/v1/tickets/:id/media', method: 'POST', description: 'Citizen attach photo or voice after submit' },
+      { path: '/api/v1/geo/states', method: 'GET', description: 'India states and UTs (LGD master)' },
+      { path: '/api/v1/geo/districts', method: 'GET', description: 'Districts for a state (?stateCode=LGD)' },
       { path: '/api/v1/gemini/deep-research', method: 'POST', description: 'Execute DPI deep policy research' },
       { path: '/api/v1/gemini/solve-edge-case', method: 'POST', description: 'Mitigate governance edge cases' },
       { path: '/api/v1/gemini/solve-pipeline', method: 'POST', description: 'End-to-end 6-stage DPI resolution pipeline' },
@@ -77,6 +80,29 @@ v1Router.get('/meta', (_req: Request, res: Response) => {
 });
 
 // Health check endpoint
+v1Router.get('/geo/states', async (_req: Request, res: Response) => {
+  try {
+    const states = await getStatesFromStore();
+    res.json({ success: true, count: states.length, states });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+v1Router.get('/geo/districts', async (req: Request, res: Response) => {
+  try {
+    const raw = String(req.query.stateCode || '');
+    const stateCode = raw ? Number(raw) : undefined;
+    if (raw && (!Number.isInteger(stateCode) || Number(stateCode) <= 0)) {
+      return res.status(400).json({ success: false, error: 'stateCode must be a positive LGD integer' });
+    }
+    const districts = await getDistrictsFromStore(stateCode);
+    res.json({ success: true, count: districts.length, stateCode: stateCode || null, districts });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 v1Router.get('/health', (_req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -370,7 +396,9 @@ v1Router.post('/cases', async (req: Request, res: Response) => {
     });
     res.status(201).json({ success: true, trackingId: newCase.trackingId, case: newCase });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    const message = err.message || 'Submit failed';
+    const status = /unknown state or district|valid 10-digit indian mobile/i.test(message) ? 400 : 500;
+    res.status(status).json({ success: false, error: message });
   }
 });
 
@@ -457,7 +485,9 @@ v1Router.post('/tickets', async (req: Request, res: Response) => {
     });
     res.status(201).json({ success: true, trackingId: newCase.trackingId, case: newCase });
   } catch (err: any) {
-    res.status(500).json({ success: false, error: err.message });
+    const message = err.message || 'Submit failed';
+    const status = /unknown state or district|valid 10-digit indian mobile/i.test(message) ? 400 : 500;
+    res.status(status).json({ success: false, error: message });
   }
 });
 
@@ -491,6 +521,7 @@ v1Router.get('/officer/inbox', async (req: Request, res: Response) => {
     const all = await getAllCases();
     const cases = filterOfficerInbox(all, {
       district: req.query.district as string | undefined,
+      state: req.query.state as string | undefined,
       urgency: req.query.urgency as string | undefined,
       department: req.query.department as string | undefined,
       slaBreach: req.query.slaBreach === '1',

@@ -22,9 +22,11 @@ import {
   extractPhoneLast4,
   isSlaBreached,
   last4Matches,
+  normalizeIndianMobile,
   omitUndefined,
   suggestedSchemeForCategory,
 } from '../utils/ticketLogic';
+import { districtSlug, resolveGeoLocation } from './geoService';
 
 export type { CaseStatus, CompletionProof, OfficerRoleKey };
 export { enforceGovernmentWorkflowGuards, isSlaBreached, last4Matches, suggestedSchemeForCategory };
@@ -89,12 +91,16 @@ export interface CitizenCase {
   slaDeadlineAt?: string;
   rejectedReason?: string;
   closeOverrideReason?: string;
+  stateLgdCode?: number;
+  districtLgdCode?: number;
+  stateIsoCode?: string;
 }
 
 // Generate durable public tracking ID format: SETU-2026-ST-DIS-XXXX
 export function generateTrackingId(state: string, district: string): string {
-  const stCode = (state.substring(0, 2) || 'IN').toUpperCase();
-  const distCode = (district.substring(0, 3) || 'GEN').toUpperCase();
+  const geo = resolveGeoLocation(state, district);
+  const stCode = geo?.state.isoCode || 'IN';
+  const distCode = districtSlug(geo?.district.name || district);
   const randomHex = Math.floor(Math.random() * 0xffff).toString(16).toUpperCase().padStart(4, '0');
   return `SETU-2026-${stCode}-${distCode}-${randomHex}`;
 }
@@ -150,6 +156,9 @@ export function seedDefaultCases() {
       slaDeadlineAt: computeSlaDeadlineAt(new Date(Date.now() - 36 * 3600 * 1000).toISOString(), 72),
       lat: 19.074,
       lng: 81.956,
+      stateLgdCode: 22,
+      districtLgdCode: 384,
+      stateIsoCode: 'CG',
     };
     localCasesMap.set(defaultCase.trackingId, defaultCase);
 
@@ -210,8 +219,16 @@ export async function submitCitizenCase(params: {
   photoUrl?: string;
   suggestedScheme?: string;
 }): Promise<CitizenCase> {
-  const trackingId = generateTrackingId(params.state, params.district);
-  const { maskedContact, dpdpToken, last4 } = generateDpdpToken(params.contactNumber);
+  const geo = resolveGeoLocation(params.state, params.district);
+  if (!geo) {
+    throw new Error('Unknown state or district');
+  }
+  const mobile = normalizeIndianMobile(params.contactNumber);
+  if (!mobile) {
+    throw new Error('Valid 10-digit Indian mobile is required');
+  }
+  const trackingId = generateTrackingId(geo.state.name, geo.district.name);
+  const { maskedContact, dpdpToken, last4 } = generateDpdpToken(mobile);
   const now = new Date().toISOString();
   const slaDeadlineHours = params.urgency === 'Critical' ? 48 : 72;
 
@@ -223,8 +240,8 @@ export async function submitCitizenCase(params: {
     title: params.title,
     description: params.description,
     category: params.category,
-    district: params.district,
-    state: params.state,
+    district: geo.district.name,
+    state: geo.state.name,
     spokenDialect: params.spokenDialect || 'Hindi / Vernacular',
     channel: params.channel || 'Web Citizen Portal',
     urgency: params.urgency === 'Critical' || params.urgency === 'Low' || params.urgency === 'Medium' ? params.urgency : 'High',
@@ -243,6 +260,9 @@ export async function submitCitizenCase(params: {
     phoneLast4: last4,
     suggestedScheme: params.suggestedScheme || suggestedSchemeForCategory(params.category),
     slaDeadlineAt: computeSlaDeadlineAt(now, slaDeadlineHours),
+    stateLgdCode: geo.state.lgdCode,
+    districtLgdCode: geo.district.lgdCode,
+    stateIsoCode: geo.state.isoCode,
   };
 
   // 1. Try Firebase Firestore
@@ -573,10 +593,11 @@ export async function appendCaseNote(params: {
 
 export function filterOfficerInbox(
   cases: CitizenCase[],
-  filters: { district?: string; urgency?: string; department?: string; slaBreach?: boolean }
+  filters: { district?: string; state?: string; urgency?: string; department?: string; slaBreach?: boolean }
 ): CitizenCase[] {
   return cases.filter((c) => {
     if (filters.district && c.district.toLowerCase() !== filters.district.toLowerCase()) return false;
+    if (filters.state && c.state.toLowerCase() !== filters.state.toLowerCase()) return false;
     if (filters.urgency && c.urgency !== filters.urgency) return false;
     if (filters.department && !(c.assignedDept || '').toLowerCase().includes(filters.department.toLowerCase())) {
       return false;

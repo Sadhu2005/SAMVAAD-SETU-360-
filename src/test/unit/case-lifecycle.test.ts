@@ -10,8 +10,8 @@ describe('Unit Test: Operational Case Lifecycle & Identity Logic', () => {
     const id1 = generateTrackingId('Chhattisgarh', 'Bastar');
     const id2 = generateTrackingId('Uttar Pradesh', 'Varanasi');
 
-    expect(id1).toMatch(/^SETU-2026-CH-BAS-[A-F0-9]{4}$/);
-    expect(id2).toMatch(/^SETU-2026-UT-VAR-[A-F0-9]{4}$/);
+    expect(id1).toMatch(/^SETU-2026-CG-BAS-[A-F0-9]{4}$/);
+    expect(id2).toMatch(/^SETU-2026-UP-VAR-[A-F0-9]{4}$/);
     expect(id1).not.toBe(id2);
   });
 

@@ -34,8 +34,14 @@ function createTicketApp() {
     if (!title || !description || !category || !district || !state || !contactNumber) {
       return res.status(400).json({ success: false, error: 'Missing fields' });
     }
-    const c = await submitCitizenCase(req.body);
-    res.status(201).json({ success: true, trackingId: c.trackingId, case: c });
+    try {
+      const c = await submitCitizenCase(req.body);
+      res.status(201).json({ success: true, trackingId: c.trackingId, case: c });
+    } catch (e: any) {
+      const message = e.message || 'Submit failed';
+      const status = /unknown state or district|valid 10-digit indian mobile/i.test(message) ? 400 : 500;
+      res.status(status).json({ success: false, error: message });
+    }
   });
 
   v1.get('/tickets/:id', async (req, res) => {
@@ -238,5 +244,27 @@ describe('Integration: ticket aliases, inbox PIN, verify, close reject', () => {
     });
     expect(start.status).toBe(400);
     expect(start.body.error).toMatch(/Invalid status jump/i);
+  });
+});
+
+describe('Integration: valid Indian mobile on ticket create', () => {
+  const app = createTicketApp();
+
+  it('rejects an invalid mobile with 400', async () => {
+    const bad = await invoke(app, {
+      method: 'POST',
+      url: '/api/v1/tickets',
+      body: {
+        title: 'Broken culvert',
+        description: 'Washed out',
+        category: 'Bridges & Culverts',
+        district: 'Bastar',
+        state: 'Chhattisgarh',
+        contactNumber: '2337132156748210',
+      },
+    });
+    expect(bad.headers['X-API-Version']).toBe('1.0.0');
+    expect(bad.status).toBe(400);
+    expect(String(bad.body?.error || '')).toMatch(/Valid 10-digit Indian mobile/i);
   });
 });
