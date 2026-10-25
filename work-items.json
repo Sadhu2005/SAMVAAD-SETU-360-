@@ -776,6 +776,66 @@
           "evidence": "Header Menu page for briefing nav. npm run test:all — 60/60 tests."
         }
       ]
+    },
+    {
+      "id": "FEAT-008",
+      "order": 17,
+      "title": "Guided Officer Command Desk actions",
+      "summary": "Replace the flat officer action row with a next-step workflow so officers can accept, assign, start work, and upload proof without guessing.",
+      "phase": "Civic UI",
+      "owner": "frontend",
+      "priority": "P1",
+      "risk_tier": 1,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-007"
+      ],
+      "source": {
+        "path": "src/components/GovernmentWorkSurface.tsx",
+        "section": "officer next step"
+      },
+      "scope": {
+        "write_globs": [
+          "src/utils/ticketLogic.ts",
+          "src/components/GovernmentWorkSurface.tsx",
+          "src/test/**",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "Desk shows current pipeline stage and one primary next action.",
+        "Invalid actions are hidden or explained, not shown as equal enabled buttons.",
+        "Junior engineers can start work and upload proof after assignment.",
+        "Action fields have visible labels; busy state blocks double submit.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.6.3-officer-desk-actions.",
+      "history": [
+        {
+          "from": "new",
+          "to": "queued",
+          "at": "2026-10-25T09:55:00.000Z",
+          "session_id": "cursor-agent-feat-008",
+          "evidence": "Registered new task in work-items.json ledger."
+        },
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T09:56:50.391Z",
+          "session_id": "cursor-agent-feat-008",
+          "evidence": "Claimed work item FEAT-008 with active write scopes: src/utils/ticketLogic.ts, src/components/GovernmentWorkSurface.tsx, src/test/**, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T10:00:13.898Z",
+          "session_id": "agent-session-verified",
+          "evidence": "Guided officer next-step desk. npm run test:all — 70/70 tests."
+        }
+      ]
     }
   ]
 }
