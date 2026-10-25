@@ -10,6 +10,7 @@ import {
   Building2,
   ExternalLink
 } from 'lucide-react';
+import { apiAbsolutePath } from '../utils/apiBase';
 
 interface DeepResearchStudioProps {
   onExportDocx: () => void;

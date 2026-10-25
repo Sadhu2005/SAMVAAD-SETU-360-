@@ -12,6 +12,7 @@ import {
   FileCheck
 } from 'lucide-react';
 import { EDGE_CASES_DATA, EdgeCase } from '../data/edgeCases';
+import { apiAbsolutePath } from '../utils/apiBase';
 
 export const EdgeCaseExplorer: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('All');
