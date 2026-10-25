@@ -903,6 +903,210 @@
           "evidence": "Gemini officer desk assist P1. npm run test:all — 80/80 tests."
         }
       ]
+    },
+    {
+      "id": "FEAT-010",
+      "order": 19,
+      "title": "Operational Bhashini ULCA ASR for citizen voice notes",
+      "summary": "Server-side Bhashini pipeline config + ASR compute for ticket voiceUrl; officer transcribe on desk; no browser keys.",
+      "phase": "Core DPI",
+      "owner": "engineering",
+      "priority": "P1",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-009"
+      ],
+      "source": {
+        "path": "src/services/bhashiniService.ts",
+        "section": "ULCA ASR"
+      },
+      "scope": {
+        "write_globs": [
+          "server.ts",
+          "src/services/bhashiniService.ts",
+          "src/services/caseService.ts",
+          "src/components/GovernmentWorkSurface.tsx",
+          "src/services/ticketApi.ts",
+          "src/utils/bhashiniAudio.ts",
+          "src/test/**",
+          ".env.example",
+          "docs/integrations/**",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "POST /api/v1/bhashini/transcribe requires officer PIN and a ticket with voiceUrl.",
+        "Returns clear error when BHASHINI credentials are missing.",
+        "Stores voiceTranscript on the case when ASR succeeds.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.7.1-bhashini-asr.",
+      "history": [
+        {
+          "from": "new",
+          "to": "queued",
+          "at": "2026-10-25T11:53:00.000Z",
+          "session_id": "cursor-agent-feat-010",
+          "evidence": "Registered new task in work-items.json ledger."
+        },
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T11:53:45.907Z",
+          "session_id": "cursor-agent-feat-010",
+          "evidence": "Claimed work item FEAT-010 with active write scopes: server.ts, src/services/bhashiniService.ts, src/services/caseService.ts, src/components/GovernmentWorkSurface.tsx, src/services/ticketApi.ts, src/utils/bhashiniAudio.ts, src/test/**, .env.example, docs/integrations/**, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T11:55:30.608Z",
+          "session_id": "agent-session-verified",
+          "evidence": "All tests passed with 0 errors (90/90); Bhashini server ASR + officer desk UI"
+        }
+      ]
+    },
+    {
+      "id": "FEAT-011",
+      "order": 20,
+      "title": "PM GatiShakti geospatial masterplan catalog and ticket triangulation",
+      "summary": "Server-side NMMP layer catalog (1,400+ layers), point triangulation against bundled masterplan assets, officer desk fusion and UJWO codes; optional live GIS endpoint.",
+      "phase": "Core DPI",
+      "owner": "geospatial",
+      "priority": "P1",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-005",
+        "FEAT-010"
+      ],
+      "source": {
+        "path": "src/services/gatiShaktiService.ts",
+        "section": "NMMP catalog"
+      },
+      "scope": {
+        "write_globs": [
+          "server.ts",
+          "src/services/gatiShaktiService.ts",
+          "src/services/caseService.ts",
+          "src/utils/gatiShaktiTriangulation.ts",
+          "src/data/gatiShaktiLayerCatalog.ts",
+          "src/data/gatiShaktiSampleAssets.ts",
+          "src/components/GovernmentWorkSurface.tsx",
+          "src/components/GatiShaktiMapHub.tsx",
+          "src/services/ticketApi.ts",
+          "src/test/**",
+          ".env.example",
+          "docs/integrations/**",
+          "README.md",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "GET /api/v1/gati-shakti/catalog exposes NMMP layer groups totaling 1,400+ layers.",
+        "POST /api/v1/gati-shakti/triangulate requires officer PIN and persists fusion on the ticket.",
+        "Officer desk shows matched layers, synergy score, and UJWO code.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.7.2-gati-shakti-masterplan.",
+      "history": [
+        {
+          "from": "new",
+          "to": "queued",
+          "at": "2026-10-25T12:10:00.000Z",
+          "session_id": "cursor-agent-feat-011",
+          "evidence": "Registered new task in work-items.json ledger."
+        },
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T12:07:32.442Z",
+          "session_id": "cursor-agent-feat-011",
+          "evidence": "Claimed work item FEAT-011 with active write scopes: server.ts, src/services/gatiShaktiService.ts, src/services/caseService.ts, src/utils/gatiShaktiTriangulation.ts, src/data/gatiShaktiLayerCatalog.ts, src/data/gatiShaktiSampleAssets.ts, src/components/GovernmentWorkSurface.tsx, src/components/GatiShaktiMapHub.tsx, src/services/ticketApi.ts, src/test/**, .env.example, docs/integrations/**, README.md, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T12:09:19.428Z",
+          "session_id": "agent-session-verified",
+          "evidence": "PM GatiShakti catalog 1447 layers + officer triangulation. npm run test:all — 99/99 tests."
+        }
+      ]
+    },
+    {
+      "id": "FEAT-012",
+      "order": 21,
+      "title": "NITI Aayog demographic indices (MPI/DIEW) and GitHub Actions CI",
+      "summary": "Bundled district MPI and aspirational indices, GET/POST /api/v1/niti/*, ticket enrichment on submit and officer desk; workflow runs lint, governance, and 4-tier tests.",
+      "phase": "Core DPI",
+      "owner": "analytics",
+      "priority": "P1",
+      "risk_tier": 2,
+      "authority": "agent_local",
+      "approval": "approved_local",
+      "status": "local_verified",
+      "auto_start": false,
+      "depends_on": [
+        "FEAT-005",
+        "FEAT-011"
+      ],
+      "source": {
+        "path": "src/services/nitiDemographicsService.ts",
+        "section": "MPI lookup"
+      },
+      "scope": {
+        "write_globs": [
+          "server.ts",
+          "src/services/nitiDemographicsService.ts",
+          "src/services/caseService.ts",
+          "src/data/nitiDistrictIndices.ts",
+          "src/utils/nitiDiew.ts",
+          "src/components/GovernmentWorkSurface.tsx",
+          "src/services/ticketApi.ts",
+          "src/test/**",
+          ".github/workflows/**",
+          "docs/integrations/**",
+          "README.md",
+          "work-items.json"
+        ]
+      },
+      "acceptance": [
+        "GET /api/v1/niti/district returns MPI, deficit, aspirational flag for LGD district.",
+        "POST /api/v1/niti/enrich-ticket updates DIPS and mpiDeficitMultiplier on case.",
+        "Citizen submit auto-applies NITI indices when district is known.",
+        "GitHub Actions runs npm run test:all on push and pull_request.",
+        "All 4 test tiers pass."
+      ],
+      "next_action": "Implement on feature/v1.7.3-niti-demographics-ci.",
+      "history": [
+        {
+          "from": "new",
+          "to": "queued",
+          "at": "2026-10-25T12:20:00.000Z",
+          "session_id": "cursor-agent-feat-012",
+          "evidence": "Registered new task in work-items.json ledger."
+        },
+        {
+          "from": "queued",
+          "to": "in_progress",
+          "at": "2026-10-25T12:17:41.747Z",
+          "session_id": "cursor-agent-feat-012",
+          "evidence": "Claimed work item FEAT-012 with active write scopes: server.ts, src/services/nitiDemographicsService.ts, src/services/caseService.ts, src/data/nitiDistrictIndices.ts, src/utils/nitiDiew.ts, src/components/GovernmentWorkSurface.tsx, src/services/ticketApi.ts, src/test/**, .github/workflows/**, docs/integrations/**, README.md, work-items.json"
+        },
+        {
+          "from": "in_progress",
+          "to": "local_verified",
+          "at": "2026-10-25T12:19:41.553Z",
+          "session_id": "agent-session-verified",
+          "evidence": "NITI MPI/DIEW APIs + auto submit enrich + GitHub Actions ci.yml. npm run test:all — 107/107."
+        }
+      ]
     }
   ]
 }

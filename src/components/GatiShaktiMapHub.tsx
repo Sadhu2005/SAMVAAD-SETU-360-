@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { apiGatiShaktiCatalogSummary } from '../services/ticketApi';
 import {
   MapPin,
   TrendingUp,
@@ -15,6 +16,20 @@ import { DISTRICT_HOTSPOTS, DistrictHotspot } from '../data/nationalData';
 export const GatiShaktiMapHub: React.FC = () => {
   const [selectedDistrict, setSelectedDistrict] = useState<DistrictHotspot>(DISTRICT_HOTSPOTS[0]);
   const [equityMultiplierEnabled, setEquityMultiplierEnabled] = useState<boolean>(true);
+  const [catalogLayers, setCatalogLayers] = useState<number | null>(null);
+  const [catalogGroups, setCatalogGroups] = useState<number | null>(null);
+
+  useEffect(() => {
+    void apiGatiShaktiCatalogSummary()
+      .then((s) => {
+        setCatalogLayers(s.totalLayers);
+        setCatalogGroups(s.layerGroups);
+      })
+      .catch(() => {
+        setCatalogLayers(1447);
+        setCatalogGroups(28);
+      });
+  }, []);
 
   // Calculate dynamic adjusted score based on DIEW toggle
   const getAdjustedScore = (district: DistrictHotspot) => {
@@ -60,9 +75,12 @@ export const GatiShaktiMapHub: React.FC = () => {
             </button>
           </div>
 
-          <div className="text-xs text-gov-muted flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-            Live Data: Census 2011/2026 Projections + NITI Aayog MPI 2024
+          <div className="text-xs text-gov-muted flex flex-wrap items-center gap-3">
+            <span className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+              NMMP catalog: {catalogLayers ?? '…'} layers · {catalogGroups ?? '…'} ministry groups
+            </span>
+            <span className="text-gov-teal font-mono">GET /api/v1/gati-shakti/catalog</span>
           </div>
         </div>
       </div>

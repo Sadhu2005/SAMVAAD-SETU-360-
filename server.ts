@@ -13,7 +13,22 @@ import {
   citizenVerifyResolution,
   filterOfficerInbox,
   appendCaseNote,
+  saveVoiceTranscript,
+  saveGatiShaktiFusion,
+  saveNitiDemographicEnrichment,
 } from './src/services/caseService';
+import { isBhashiniConfigured, transcribeVoiceUrl } from './src/services/bhashiniService';
+import {
+  getGatiShaktiCatalogSummary,
+  isGatiShaktiLiveConfigured,
+  queryGatiShaktiCatalog,
+  triangulateCitizenCase,
+} from './src/services/gatiShaktiService';
+import {
+  getNitiDistrictProfile,
+  getNitiIndicesSummary,
+  listAspirationalDistrictIndices,
+} from './src/services/nitiDemographicsService';
 import { computeDeskAssist } from './src/services/deskAssistService';
 import {
   geminiConfig,
@@ -72,6 +87,14 @@ v1Router.get('/meta', (_req: Request, res: Response) => {
       { path: '/api/v1/gemini/solve-edge-case', method: 'POST', description: 'Mitigate governance edge cases' },
       { path: '/api/v1/gemini/solve-pipeline', method: 'POST', description: 'End-to-end 6-stage DPI resolution pipeline' },
       { path: '/api/v1/gemini/desk-assist', method: 'POST', description: 'Officer desk AI assist (summary, department, remarks draft)' },
+      { path: '/api/v1/bhashini/transcribe', method: 'POST', description: 'Bhashini ULCA ASR for citizen voice note on a ticket' },
+      { path: '/api/v1/gati-shakti/catalog/summary', method: 'GET', description: 'PM GatiShakti NMMP layer catalog totals (1,400+ layers)' },
+      { path: '/api/v1/gati-shakti/catalog', method: 'GET', description: 'Search NMMP ministry layer groups (?q=&ministry=&limit=&offset=)' },
+      { path: '/api/v1/gati-shakti/triangulate', method: 'POST', description: 'Triangulate ticket location against masterplan assets' },
+      { path: '/api/v1/niti/indices/summary', method: 'GET', description: 'NITI Aayog MPI / aspirational district bundle summary' },
+      { path: '/api/v1/niti/district', method: 'GET', description: 'District MPI, deficit, DIEW inputs (?state=&district=)' },
+      { path: '/api/v1/niti/aspirational-districts', method: 'GET', description: 'Bundled aspirational district index rows' },
+      { path: '/api/v1/niti/enrich-ticket', method: 'POST', description: 'Recompute DIPS with NITI MPI / DIEW on a ticket' },
     ]
   });
 });
@@ -110,8 +133,44 @@ v1Router.get('/health', (_req: Request, res: Response) => {
     geminiEnabled: cfg.enabled,
     geminiModel: geminiModelId(),
     geminiReady: isGeminiReady(),
+    bhashiniConfigured: isBhashiniConfigured(),
+    gatiShaktiCatalogLayers: getGatiShaktiCatalogSummary().totalLayers,
+    gatiShaktiLiveGis: isGatiShaktiLiveConfigured(),
+    nitiIndicesBundled: getNitiIndicesSummary().bundledDistricts,
     platform: 'SamvaadSetu 360 DPI Engine'
   });
+});
+
+v1Router.get('/niti/indices/summary', (_req: Request, res: Response) => {
+  res.json({ success: true, ...getNitiIndicesSummary() });
+});
+
+v1Router.get('/niti/aspirational-districts', (_req: Request, res: Response) => {
+  const rows = listAspirationalDistrictIndices();
+  res.json({ success: true, count: rows.length, districts: rows });
+});
+
+v1Router.get('/niti/district', (req: Request, res: Response) => {
+  const state = String(req.query.state || '').trim();
+  const district = String(req.query.district || '').trim();
+  if (!state || !district) {
+    return res.status(400).json({ success: false, error: 'state and district query params are required' });
+  }
+  const profile = getNitiDistrictProfile(state, district);
+  return res.json({ success: true, ...profile });
+});
+
+v1Router.get('/gati-shakti/catalog/summary', (_req: Request, res: Response) => {
+  res.json({ success: true, ...getGatiShaktiCatalogSummary() });
+});
+
+v1Router.get('/gati-shakti/catalog', (req: Request, res: Response) => {
+  const q = req.query.q ? String(req.query.q) : undefined;
+  const ministry = req.query.ministry ? String(req.query.ministry) : undefined;
+  const limit = req.query.limit ? Number(req.query.limit) : undefined;
+  const offset = req.query.offset ? Number(req.query.offset) : undefined;
+  const result = queryGatiShaktiCatalog({ q, ministry, limit, offset });
+  res.json({ success: true, ...result });
 });
 
 // Deep Research API using Gemini 3.8 Flash
@@ -373,6 +432,116 @@ v1Router.post('/gemini/desk-assist', async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     return res.status(500).json({ success: false, error: err.message || 'Desk assist failed' });
+  }
+});
+
+v1Router.post('/bhashini/transcribe', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    const trackingId = String(req.body?.trackingId || '');
+    const officerName = String(req.body?.officerName || 'Officer');
+    if (!trackingId) {
+      return res.status(400).json({ success: false, error: 'trackingId is required' });
+    }
+    if (!isBhashiniConfigured()) {
+      return res.status(503).json({
+        success: false,
+        error:
+          'Bhashini is not configured on the server. Add BHASHINI_USER_ID, BHASHINI_ULCA_API_KEY, and BHASHINI_PIPELINE_ID.',
+      });
+    }
+    const { caseData } = await getCaseByTrackingId(trackingId);
+    if (!caseData) {
+      return res.status(404).json({ success: false, error: `Ticket ${trackingId} not found` });
+    }
+    if (!caseData.voiceUrl) {
+      return res.status(400).json({ success: false, error: 'This ticket has no voice note attached' });
+    }
+    if (caseData.voiceTranscript?.trim()) {
+      return res.json({
+        success: true,
+        source: 'cached',
+        transcript: caseData.voiceTranscript,
+        sourceLanguage: caseData.voiceTranscriptLanguage || 'hi',
+        case: caseData,
+      });
+    }
+    const languageHint = String(req.body?.sourceLanguage || caseData.language || caseData.spokenDialect || '');
+    const asr = await transcribeVoiceUrl({ voiceUrl: caseData.voiceUrl, languageHint });
+    const updated = await saveVoiceTranscript({
+      trackingId,
+      transcript: asr.transcript,
+      sourceLanguage: asr.sourceLanguage,
+      officerName,
+    });
+    return res.json({
+      success: true,
+      source: 'bhashini',
+      transcript: asr.transcript,
+      sourceLanguage: asr.sourceLanguage,
+      serviceId: asr.serviceId,
+      case: updated,
+    });
+  } catch (err: any) {
+    const message = err.message || 'Bhashini transcribe failed';
+    const status = /not configured/i.test(message) ? 503 : 502;
+    return res.status(status).json({ success: false, error: message });
+  }
+});
+
+v1Router.post('/gati-shakti/triangulate', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    const trackingId = String(req.body?.trackingId || '');
+    const officerName = String(req.body?.officerName || 'Officer');
+    if (!trackingId) {
+      return res.status(400).json({ success: false, error: 'trackingId is required' });
+    }
+    const { caseData } = await getCaseByTrackingId(trackingId);
+    if (!caseData) {
+      return res.status(404).json({ success: false, error: `Ticket ${trackingId} not found` });
+    }
+    const fusion = triangulateCitizenCase(caseData);
+    const updated = await saveGatiShaktiFusion({
+      trackingId,
+      officerName,
+      fusion: {
+        gatiShaktiAssetId: fusion.gatiShaktiAssetId,
+        cadastralParcel: fusion.cadastralParcel,
+        synergyScore: fusion.synergyScore,
+        matchedLayerIds: fusion.matchedLayerGroups.map((g) => g.id),
+        primaryDept: fusion.primaryDept,
+        secondaryDept: fusion.secondaryDept,
+        jointWorkOrderCode: fusion.jointWorkOrderCode,
+        coordinateSource: fusion.coordinateSource,
+      },
+    });
+    return res.json({
+      success: true,
+      liveGis: isGatiShaktiLiveConfigured(),
+      fusion,
+      case: updated,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ success: false, error: err.message || 'GatiShakti triangulation failed' });
+  }
+});
+
+v1Router.post('/niti/enrich-ticket', async (req: Request, res: Response) => {
+  if (!requireOfficerPin(req, res)) return;
+  try {
+    const trackingId = String(req.body?.trackingId || '');
+    const officerName = String(req.body?.officerName || 'Officer');
+    if (!trackingId) {
+      return res.status(400).json({ success: false, error: 'trackingId is required' });
+    }
+    const updated = await saveNitiDemographicEnrichment({ trackingId, officerName });
+    return res.json({ success: true, case: updated });
+  } catch (err: any) {
+    return res.status(err.message?.includes('not found') ? 404 : 500).json({
+      success: false,
+      error: err.message || 'NITI enrichment failed',
+    });
   }
 });
 

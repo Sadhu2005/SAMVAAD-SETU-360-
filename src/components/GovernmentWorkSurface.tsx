@@ -8,6 +8,9 @@ import {
 import type { CaseStatus, CitizenCase } from '../services/caseService';
 import {
   apiAssignTicket,
+  apiBhashiniTranscribe,
+  apiGatiShaktiTriangulate,
+  apiNitiEnrichTicket,
   apiDeskAssist,
   apiOfficerInbox,
   apiOfficerUpdate,
@@ -76,6 +79,12 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
   const [assistLoading, setAssistLoading] = useState(false);
   const [assistError, setAssistError] = useState<string | null>(null);
   const [assistResult, setAssistResult] = useState<DeskAssistResponse | null>(null);
+  const [transcribeLoading, setTranscribeLoading] = useState(false);
+  const [transcribeError, setTranscribeError] = useState<string | null>(null);
+  const [gatiLoading, setGatiLoading] = useState(false);
+  const [gatiError, setGatiError] = useState<string | null>(null);
+  const [nitiLoading, setNitiLoading] = useState(false);
+  const [nitiError, setNitiError] = useState<string | null>(null);
 
   useEffect(() => {
     setSession(getOfficerSession());
@@ -110,6 +119,9 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
     setProofName('');
     setAssistResult(null);
     setAssistError(null);
+    setTranscribeError(null);
+    setGatiError(null);
+    setNitiError(null);
   }, [selected?.trackingId]);
 
   const loadInbox = async () => {
@@ -152,6 +164,51 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
     setOfficerSession(next);
     setSession(next);
     setLoginError(null);
+  };
+
+  const loadNitiEnrichment = async () => {
+    if (!selected || !session) return;
+    setNitiLoading(true);
+    setNitiError(null);
+    try {
+      const result = await apiNitiEnrichTicket(selected.trackingId, session.name);
+      setSelected(result.case);
+      await loadInbox();
+    } catch (err: any) {
+      setNitiError(err.message);
+    } finally {
+      setNitiLoading(false);
+    }
+  };
+
+  const loadGatiShaktiFusion = async () => {
+    if (!selected || !session) return;
+    setGatiLoading(true);
+    setGatiError(null);
+    try {
+      const result = await apiGatiShaktiTriangulate(selected.trackingId, session.name);
+      setSelected(result.case);
+      await loadInbox();
+    } catch (err: any) {
+      setGatiError(err.message);
+    } finally {
+      setGatiLoading(false);
+    }
+  };
+
+  const loadBhashiniTranscript = async () => {
+    if (!selected || !session) return;
+    setTranscribeLoading(true);
+    setTranscribeError(null);
+    try {
+      const result = await apiBhashiniTranscribe(selected.trackingId, session.name);
+      setSelected(result.case);
+      await loadInbox();
+    } catch (err: any) {
+      setTranscribeError(err.message);
+    } finally {
+      setTranscribeLoading(false);
+    }
   };
 
   const loadDeskAssist = async () => {
@@ -447,6 +504,102 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
                   src={`https://www.openstreetmap.org/export/embed.html?bbox=${selected.lng - 0.02}%2C${selected.lat - 0.02}%2C${selected.lng + 0.02}%2C${selected.lat + 0.02}&layer=mapnik&marker=${selected.lat}%2C${selected.lng}`}
                 />
               )}
+              <section
+                className="border border-gov-border bg-gov-inset p-4 space-y-3"
+                aria-labelledby="niti-heading"
+              >
+                <p className="text-xs uppercase font-bold text-gov-teal tracking-wide">NITI Aayog demographics</p>
+                <h4 id="niti-heading" className="text-sm font-semibold text-gov-navy">
+                  MPI & DIEW equity indices
+                </h4>
+                <p className="text-xs text-gov-muted">
+                  Applies district Multi-Dimensional Poverty Index and Demographic-Inverse Equity Weighting to the ticket DIPS score.
+                </p>
+                <button
+                  type="button"
+                  disabled={nitiLoading || busy}
+                  aria-busy={nitiLoading}
+                  onClick={() => void loadNitiEnrichment()}
+                  className="min-h-11 px-4 rounded-sm bg-gov-teal text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {nitiLoading ? 'Applying indices…' : 'Refresh NITI indices'}
+                </button>
+                {nitiError && <p className="text-sm text-gov-error">{nitiError}</p>}
+                {(selected.nitiMpiScore != null || selected.mpiDeficitMultiplier) && (
+                  <div className="rounded-sm border border-gov-border bg-gov-card p-3 text-sm space-y-1">
+                    {selected.nitiMpiScore != null && (
+                      <p>
+                        <span className="font-semibold text-gov-navy">MPI:</span> {selected.nitiMpiScore.toFixed(2)}
+                        {selected.nitiAspirationalDistrict ? ' · Aspirational district' : ''}
+                      </p>
+                    )}
+                    {selected.nitiInfrastructureDeficit != null && (
+                      <p>
+                        <span className="font-semibold text-gov-navy">Infrastructure deficit:</span>{' '}
+                        {selected.nitiInfrastructureDeficit}/100
+                      </p>
+                    )}
+                    {selected.mpiDeficitMultiplier && (
+                      <p className="text-gov-muted">{selected.mpiDeficitMultiplier}</p>
+                    )}
+                    <p>
+                      <span className="font-semibold text-gov-navy">DIPS:</span> {selected.dipsScore}
+                    </p>
+                  </div>
+                )}
+              </section>
+              <section
+                className="border border-gov-border bg-gov-inset p-4 space-y-3"
+                aria-labelledby="gati-shakti-heading"
+              >
+                <p className="text-xs uppercase font-bold text-gov-teal tracking-wide">PM GatiShakti masterplan</p>
+                <h4 id="gati-shakti-heading" className="text-sm font-semibold text-gov-navy">
+                  Geospatial triangulation (1,400+ NMMP layers)
+                </h4>
+                <p className="text-xs text-gov-muted">
+                  Matches ticket location and category to national masterplan asset groups. Generates a Beckn-style UJWO reference for inter-agency routing.
+                </p>
+                <button
+                  type="button"
+                  disabled={gatiLoading || busy}
+                  aria-busy={gatiLoading}
+                  onClick={() => void loadGatiShaktiFusion()}
+                  className="min-h-11 px-4 rounded-sm bg-gov-navy text-white text-sm font-semibold disabled:opacity-50"
+                >
+                  {gatiLoading ? 'Triangulating…' : 'Triangulate with GatiShakti'}
+                </button>
+                {gatiError && <p className="text-sm text-gov-error">{gatiError}</p>}
+                {(selected.gatiShaktiAssetId || selected.jointWorkOrderCode) && (
+                  <div className="rounded-sm border border-gov-border bg-gov-card p-3 text-sm space-y-1">
+                    {selected.gatiShaktiAssetId && (
+                      <p>
+                        <span className="font-semibold text-gov-navy">Asset:</span> {selected.gatiShaktiAssetId}
+                      </p>
+                    )}
+                    {selected.cadastralParcel && (
+                      <p>
+                        <span className="font-semibold text-gov-navy">Cadastral:</span> {selected.cadastralParcel}
+                      </p>
+                    )}
+                    {selected.gatiShaktiSynergyScore != null && (
+                      <p>
+                        <span className="font-semibold text-gov-navy">Synergy (S_gati):</span>{' '}
+                        {selected.gatiShaktiSynergyScore}
+                      </p>
+                    )}
+                    {selected.gatiShaktiPrimaryDept && (
+                      <p>
+                        <span className="font-semibold text-gov-navy">Primary dept:</span>{' '}
+                        {selected.gatiShaktiPrimaryDept}
+                        {selected.gatiShaktiSecondaryDept ? ` · ${selected.gatiShaktiSecondaryDept}` : ''}
+                      </p>
+                    )}
+                    {selected.jointWorkOrderCode && (
+                      <p className="font-mono text-xs text-gov-teal">{selected.jointWorkOrderCode}</p>
+                    )}
+                  </div>
+                )}
+              </section>
               {(selected.photoUrl || selected.voiceUrl) && (
                 <div className="space-y-2 border border-gov-border bg-gov-inset p-3">
                   <p className="text-sm font-semibold text-gov-navy">Citizen submitted media</p>
@@ -454,9 +607,39 @@ export const GovernmentWorkSurface: React.FC<{ initialTrackingId?: string }> = (
                     <img src={selected.photoUrl} alt="Citizen submitted photo" className="rounded-sm max-h-56 w-full object-cover" />
                   )}
                   {selected.voiceUrl && (
-                    <audio controls src={selected.voiceUrl} className="w-full">
-                      Your browser does not support audio.
-                    </audio>
+                    <>
+                      <audio controls src={selected.voiceUrl} className="w-full">
+                        Your browser does not support audio.
+                      </audio>
+                      <button
+                        type="button"
+                        disabled={transcribeLoading || busy}
+                        aria-busy={transcribeLoading}
+                        onClick={() => void loadBhashiniTranscript()}
+                        className="min-h-11 px-3 rounded-sm bg-gov-navy text-white text-sm font-semibold disabled:opacity-50"
+                      >
+                        {transcribeLoading ? 'Transcribing…' : 'Transcribe voice (Bhashini)'}
+                      </button>
+                      {transcribeError && (
+                        <p className="text-sm text-gov-error">{transcribeError}</p>
+                      )}
+                      {selected.voiceTranscript && (
+                        <div className="rounded-sm border border-gov-border bg-gov-card p-3 text-sm">
+                          <p className="text-xs font-semibold text-gov-navy">
+                            Voice transcript ({selected.voiceTranscriptLanguage || 'hi'})
+                          </p>
+                          <p className="text-gov-text mt-1">{selected.voiceTranscript}</p>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => setRemarks(selected.voiceTranscript || '')}
+                            className="mt-2 min-h-11 px-3 rounded-sm bg-gov-inset border border-gov-border text-sm font-semibold"
+                          >
+                            Use transcript as remarks
+                          </button>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               )}

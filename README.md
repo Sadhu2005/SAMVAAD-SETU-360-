@@ -289,6 +289,14 @@ You must paste from Firebase Console → Project settings → Your web app:
 
 Optional server key: `GEMINI_API_KEY` from [Google AI Studio](https://aistudio.google.com/apikey). When set, the Officer Command Desk can request **AI assist (optional)** suggestions via `POST /api/v1/gemini/desk-assist` (server-side only; officers still confirm every action). Check `GET /api/v1/health` for `geminiReady`. Optional: `GEMINI_MODEL`, `GEMINI_ENABLED`.
 
+Optional **Bhashini ULCA ASR** (citizen voice → text on the officer desk): set `BHASHINI_USER_ID`, `BHASHINI_ULCA_API_KEY`, `BHASHINI_PIPELINE_ID` on the server only. Setup: [docs/integrations/bhashini-setup.md](docs/integrations/bhashini-setup.md). Without credentials, transcribe returns a clear 503; the ticket loop still works.
+
+**PM GatiShakti masterplan (1,400+ layers):** server catalog at `/api/v1/gati-shakti/catalog` and officer **Triangulate with GatiShakti** on each ticket. Setup: [docs/integrations/gati-shakti-setup.md](docs/integrations/gati-shakti-setup.md). Works offline with bundled NMMP taxonomy; optional `GATISHAKTI_GIS_BASE_URL` + `GATISHAKTI_API_KEY` for live GIS when approved.
+
+**NITI Aayog demographic indices (MPI / DIEW):** `/api/v1/niti/district` and auto-enrichment on ticket submit; officer **Refresh NITI indices**. [docs/integrations/niti-demographics.md](docs/integrations/niti-demographics.md).
+
+**CI:** GitHub Actions runs lint, governance audit, and all four test tiers via `npm run test:all` (see `.github/workflows/ci.yml`).
+
 For **AI Studio / Cloud Run**, set the same variables in the Secrets panel (use production `APP_URL` in `.env.example`). For **local dev**, use `APP_URL=http://localhost:3000`.
 
 Do **not** commit `firebase-applet-config.json` or real API keys. If a key was ever pushed to GitHub, rotate it in Google Cloud and follow [docs/security/firebase-key-rotation.md](docs/security/firebase-key-rotation.md).

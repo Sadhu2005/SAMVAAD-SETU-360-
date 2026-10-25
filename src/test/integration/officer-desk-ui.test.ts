@@ -26,6 +26,12 @@ describe('Integration: Officer Command Desk action panel', () => {
     expect(government).toContain('AI assist (optional)');
     expect(government).toContain('apiDeskAssist');
     expect(government).toContain('Get suggestion');
+    expect(government).toContain('Transcribe voice (Bhashini)');
+    expect(government).toContain('apiBhashiniTranscribe');
+    expect(government).toContain('Triangulate with GatiShakti');
+    expect(government).toContain('apiGatiShaktiTriangulate');
+    expect(government).toContain('Refresh NITI indices');
+    expect(government).toContain('apiNitiEnrichTicket');
   });
 
   it('blocks double submit and does not dump the old equal action row', () => {

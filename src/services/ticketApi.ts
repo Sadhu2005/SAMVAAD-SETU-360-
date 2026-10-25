@@ -135,6 +135,96 @@ export interface DeskAssistResponse {
   };
 }
 
+export interface GatiShaktiCatalogSummary {
+  totalLayers: number;
+  layerGroups: number;
+  ministries: number;
+  liveGisConnected: boolean;
+  source: string;
+}
+
+export interface GatiShaktiTriangulateResponse {
+  success: boolean;
+  liveGis: boolean;
+  fusion: {
+    coordinateSource: string;
+    lat: number;
+    lng: number;
+    synergyScore: number;
+    gatiShaktiAssetId: string;
+    cadastralParcel: string;
+    primaryDept: string;
+    secondaryDept?: string;
+    jointWorkOrderCode: string;
+    matchedAssets: Array<{ assetId: string; name: string; distanceKm: number }>;
+    matchedLayerGroups: Array<{ id: string; ministry: string; domain: string; layerCount: number }>;
+  };
+  case: CitizenCase;
+}
+
+export async function apiGatiShaktiCatalogSummary(): Promise<GatiShaktiCatalogSummary> {
+  const res = await fetch(`${API}/gati-shakti/catalog/summary`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'GatiShakti catalog summary failed');
+  return data;
+}
+
+export async function apiNitiDistrictProfile(state: string, district: string) {
+  const params = new URLSearchParams({ state, district });
+  const res = await fetch(`${API}/niti/district?${params}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'NITI district lookup failed');
+  return data;
+}
+
+export async function apiNitiEnrichTicket(
+  trackingId: string,
+  officerName: string
+): Promise<{ success: boolean; case: CitizenCase }> {
+  const res = await fetch(`${API}/niti/enrich-ticket`, {
+    method: 'POST',
+    headers: officerHeaders(),
+    body: JSON.stringify({ trackingId, officerName }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'NITI enrich failed');
+  return data;
+}
+
+export async function apiGatiShaktiTriangulate(
+  trackingId: string,
+  officerName: string
+): Promise<GatiShaktiTriangulateResponse> {
+  const res = await fetch(`${API}/gati-shakti/triangulate`, {
+    method: 'POST',
+    headers: officerHeaders(),
+    body: JSON.stringify({ trackingId, officerName }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'GatiShakti triangulation failed');
+  return data;
+}
+
+export async function apiBhashiniTranscribe(
+  trackingId: string,
+  officerName: string
+): Promise<{
+  success: boolean;
+  source: 'bhashini' | 'cached';
+  transcript: string;
+  sourceLanguage: string;
+  case: CitizenCase;
+}> {
+  const res = await fetch(`${API}/bhashini/transcribe`, {
+    method: 'POST',
+    headers: officerHeaders(),
+    body: JSON.stringify({ trackingId, officerName }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Bhashini transcribe failed');
+  return data;
+}
+
 export async function apiDeskAssist(trackingId: string): Promise<DeskAssistResponse> {
   const res = await fetch(`${API}/gemini/desk-assist`, {
     method: 'POST',

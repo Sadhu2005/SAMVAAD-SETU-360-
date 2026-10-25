@@ -22,6 +22,7 @@ import {
   suggestedSchemeForCategory,
 } from '../utils/ticketLogic';
 import { districtSlug, resolveGeoLocation } from './geoService';
+import { applyNitiEnrichmentToCase } from './nitiDemographicsService';
 
 export type { CaseStatus, CompletionProof, OfficerRoleKey };
 export { enforceGovernmentWorkflowGuards, isSlaBreached, last4Matches, suggestedSchemeForCategory };
@@ -75,11 +76,20 @@ export interface CitizenCase {
   citizenFeedback?: CitizenFeedback;
   gatiShaktiAssetId?: string;
   cadastralParcel?: string;
+  gatiShaktiSynergyScore?: number;
+  gatiShaktiMatchedLayerIds?: string[];
+  gatiShaktiPrimaryDept?: string;
+  gatiShaktiSecondaryDept?: string;
+  jointWorkOrderCode?: string;
+  gatiShaktiTriangulatedAt?: string;
   village?: string;
   lat?: number;
   lng?: number;
   language?: string;
   voiceUrl?: string;
+  voiceTranscript?: string;
+  voiceTranscriptLanguage?: string;
+  voiceTranscriptAt?: string;
   photoUrl?: string;
   phoneLast4?: string;
   suggestedScheme?: string;
@@ -89,6 +99,11 @@ export interface CitizenCase {
   stateLgdCode?: number;
   districtLgdCode?: number;
   stateIsoCode?: string;
+  nitiMpiScore?: number;
+  nitiInfrastructureDeficit?: number;
+  nitiAspirationalDistrict?: boolean;
+  nitiDiewMultiplier?: number;
+  nitiEnrichedAt?: string;
 }
 
 // Generate durable public tracking ID format: SETU-2026-ST-DIS-XXXX
@@ -268,6 +283,8 @@ export async function submitCitizenCase(params: {
     districtLgdCode: geo.district.lgdCode,
     stateIsoCode: geo.state.isoCode,
   };
+
+  applyNitiEnrichmentToCase(newCase);
 
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
@@ -555,6 +572,161 @@ export async function citizenVerifyResolution(params: {
   });
   localAuditLogsMap.set(params.trackingId, logs);
 
+  return caseData;
+}
+
+export async function saveVoiceTranscript(params: {
+  trackingId: string;
+  transcript: string;
+  sourceLanguage: string;
+  officerName: string;
+}): Promise<CitizenCase> {
+  const { caseData } = await getCaseByTrackingId(params.trackingId);
+  if (!caseData) throw new Error(`Case ${params.trackingId} not found`);
+  if (!caseData.voiceUrl) throw new Error('This ticket has no citizen voice note to transcribe');
+  const now = new Date().toISOString();
+  caseData.voiceTranscript = params.transcript.trim();
+  caseData.voiceTranscriptLanguage = params.sourceLanguage;
+  caseData.voiceTranscriptAt = now;
+  caseData.updatedAt = now;
+  const entry: AuditLogEntry = {
+    caseId: params.trackingId,
+    timestamp: now,
+    actor: params.officerName,
+    role: 'field_officer',
+    action: 'Voice transcribed (Bhashini ASR)',
+    details: params.transcript.slice(0, 500),
+    previousStatus: caseData.status,
+    newStatus: caseData.status,
+  };
+  try {
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    await updateDoc(
+      doc(db!, 'cases', params.trackingId),
+      omitUndefined({
+        voiceTranscript: caseData.voiceTranscript,
+        voiceTranscriptLanguage: caseData.voiceTranscriptLanguage,
+        voiceTranscriptAt: caseData.voiceTranscriptAt,
+        updatedAt: now,
+      })
+    );
+    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), entry);
+  } catch (err) {
+    console.warn('Firestore voice transcript fallback:', err);
+  }
+  const logs = localAuditLogsMap.get(params.trackingId) || [];
+  logs.push(entry);
+  localAuditLogsMap.set(params.trackingId, logs);
+  localCasesMap.set(params.trackingId, caseData);
+  return caseData;
+}
+
+export async function saveGatiShaktiFusion(params: {
+  trackingId: string;
+  officerName: string;
+  fusion: {
+    gatiShaktiAssetId: string;
+    cadastralParcel: string;
+    synergyScore: number;
+    matchedLayerIds: string[];
+    primaryDept: string;
+    secondaryDept?: string;
+    jointWorkOrderCode: string;
+    coordinateSource: string;
+  };
+}): Promise<CitizenCase> {
+  const { caseData } = await getCaseByTrackingId(params.trackingId);
+  if (!caseData) throw new Error(`Case ${params.trackingId} not found`);
+  const now = new Date().toISOString();
+  caseData.gatiShaktiAssetId = params.fusion.gatiShaktiAssetId;
+  caseData.cadastralParcel = params.fusion.cadastralParcel;
+  caseData.gatiShaktiSynergyScore = params.fusion.synergyScore;
+  caseData.gatiShaktiMatchedLayerIds = params.fusion.matchedLayerIds;
+  caseData.gatiShaktiPrimaryDept = params.fusion.primaryDept;
+  caseData.gatiShaktiSecondaryDept = params.fusion.secondaryDept;
+  caseData.jointWorkOrderCode = params.fusion.jointWorkOrderCode;
+  caseData.gatiShaktiTriangulatedAt = now;
+  caseData.updatedAt = now;
+  const details = `Asset ${params.fusion.gatiShaktiAssetId}; synergy ${params.fusion.synergyScore}; UJWO ${params.fusion.jointWorkOrderCode}; coords via ${params.fusion.coordinateSource}`;
+  const entry: AuditLogEntry = {
+    caseId: params.trackingId,
+    timestamp: now,
+    actor: params.officerName,
+    role: 'field_officer',
+    action: 'Geospatial triangulation (PM GatiShakti)',
+    details,
+    previousStatus: caseData.status,
+    newStatus: caseData.status,
+  };
+  try {
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    await updateDoc(
+      doc(db!, 'cases', params.trackingId),
+      omitUndefined({
+        gatiShaktiAssetId: caseData.gatiShaktiAssetId,
+        cadastralParcel: caseData.cadastralParcel,
+        gatiShaktiSynergyScore: caseData.gatiShaktiSynergyScore,
+        gatiShaktiMatchedLayerIds: caseData.gatiShaktiMatchedLayerIds,
+        gatiShaktiPrimaryDept: caseData.gatiShaktiPrimaryDept,
+        gatiShaktiSecondaryDept: caseData.gatiShaktiSecondaryDept,
+        jointWorkOrderCode: caseData.jointWorkOrderCode,
+        gatiShaktiTriangulatedAt: caseData.gatiShaktiTriangulatedAt,
+        updatedAt: now,
+      })
+    );
+    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), entry);
+  } catch (err) {
+    console.warn('Firestore GatiShakti fusion fallback:', err);
+  }
+  const logs = localAuditLogsMap.get(params.trackingId) || [];
+  logs.push(entry);
+  localAuditLogsMap.set(params.trackingId, logs);
+  localCasesMap.set(params.trackingId, caseData);
+  return caseData;
+}
+
+export async function saveNitiDemographicEnrichment(params: {
+  trackingId: string;
+  officerName: string;
+}): Promise<CitizenCase> {
+  const { caseData } = await getCaseByTrackingId(params.trackingId);
+  if (!caseData) throw new Error(`Case ${params.trackingId} not found`);
+  applyNitiEnrichmentToCase(caseData);
+  const now = caseData.nitiEnrichedAt || new Date().toISOString();
+  caseData.updatedAt = now;
+  const entry: AuditLogEntry = {
+    caseId: params.trackingId,
+    timestamp: now,
+    actor: params.officerName,
+    role: 'field_officer',
+    action: 'NITI Aayog demographic indices applied',
+    details: `MPI ${caseData.nitiMpiScore} · DIEW ${caseData.nitiDiewMultiplier}x · DIPS ${caseData.dipsScore}`,
+    previousStatus: caseData.status,
+    newStatus: caseData.status,
+  };
+  try {
+    if (!canUseFirestore()) throw new Error('Firestore not configured');
+    await updateDoc(
+      doc(db!, 'cases', params.trackingId),
+      omitUndefined({
+        nitiMpiScore: caseData.nitiMpiScore,
+        nitiInfrastructureDeficit: caseData.nitiInfrastructureDeficit,
+        nitiAspirationalDistrict: caseData.nitiAspirationalDistrict,
+        nitiDiewMultiplier: caseData.nitiDiewMultiplier,
+        nitiEnrichedAt: caseData.nitiEnrichedAt,
+        dipsScore: caseData.dipsScore,
+        mpiDeficitMultiplier: caseData.mpiDeficitMultiplier,
+        updatedAt: now,
+      })
+    );
+    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), entry);
+  } catch (err) {
+    console.warn('Firestore NITI enrichment fallback:', err);
+  }
+  const logs = localAuditLogsMap.get(params.trackingId) || [];
+  logs.push(entry);
+  localAuditLogsMap.set(params.trackingId, logs);
+  localCasesMap.set(params.trackingId, caseData);
   return caseData;
 }
 

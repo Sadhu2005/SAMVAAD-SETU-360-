@@ -1,0 +1,245 @@
+/** PM GatiShakti National Master Plan — ministry layer groups (NMMP public taxonomy). */
+export interface GatiShaktiLayerGroup {
+  id: string;
+  ministry: string;
+  domain: string;
+  layerCount: number;
+  keywords: string[];
+  sampleLayers: string[];
+}
+
+export const GATI_SHAKTI_LAYER_GROUPS: GatiShaktiLayerGroup[] = [
+  {
+    id: 'GS-MORTH-NH',
+    ministry: 'MoRTH',
+    domain: 'National Highways & Expressways',
+    layerCount: 194,
+    keywords: ['bharatmala', 'nh', 'expressway', 'toll', 'road'],
+    sampleLayers: ['NH-44 corridor', 'Delhi–Mumbai Expressway alignment', 'RoB/RoU inventory'],
+  },
+  {
+    id: 'GS-MORD-PMGSY',
+    ministry: 'MoRD',
+    domain: 'PMGSY & Rural Roads',
+    layerCount: 98,
+    keywords: ['pmgsy', 'rural', 'gram', 'culvert', 'causeway'],
+    sampleLayers: ['PMGSY habitations connectivity', 'Rural bridge inventory', 'Forest village roads'],
+  },
+  {
+    id: 'GS-MOR-RAIL',
+    ministry: 'Ministry of Railways',
+    domain: 'Rail Network & DFC',
+    layerCount: 91,
+    keywords: ['rail', 'dfcw', 'dfce', 'station', 'freight'],
+    sampleLayers: ['Dedicated Freight Corridor', 'USBRL alignment', 'Level crossing inventory'],
+  },
+  {
+    id: 'GS-MOP-POWER',
+    ministry: 'Ministry of Power',
+    domain: 'Transmission & Grid',
+    layerCount: 84,
+    keywords: ['transmission', 'substation', 'feeder', 'grid'],
+    sampleLayers: ['400 kV lines', 'Rural feeder separation', 'Solar park evacuation'],
+  },
+  {
+    id: 'GS-DOT-TELECOM',
+    ministry: 'DoT',
+    domain: 'Optical Fiber & Towers',
+    layerCount: 78,
+    keywords: ['bharatnet', 'fiber', '5g', 'tower'],
+    sampleLayers: ['BharatNet OFC', '4G/5G tower footprint', 'Dark fiber corridors'],
+  },
+  {
+    id: 'GS-MOPNG-GAS',
+    ministry: 'MoPNG',
+    domain: 'Pipelines & City Gas',
+    layerCount: 71,
+    keywords: ['png', 'lpg', 'pipeline', 'cgd'],
+    sampleLayers: ['Urja Ganga pipeline', 'CGD district boundaries', 'LPG bottling plants'],
+  },
+  {
+    id: 'GS-MOJS-WATER',
+    ministry: 'Ministry of Jal Shakti',
+    domain: 'Jal Jeevan & Irrigation',
+    layerCount: 68,
+    keywords: ['jjm', 'canal', 'dam', 'water supply'],
+    sampleLayers: ['JJM FHTC coverage', 'Canal command area', 'Intake wells'],
+  },
+  {
+    id: 'GS-MOHUA-URBAN',
+    ministry: 'MoHUA',
+    domain: 'AMRUT & Urban Utilities',
+    layerCount: 65,
+    keywords: ['amrut', 'sewer', 'urban', 'smart city'],
+    sampleLayers: ['AMRUT 2.0 projects', 'Sewerage networks', 'ULB boundaries'],
+  },
+  {
+    id: 'GS-MOPSW-PORTS',
+    ministry: 'MoPSW',
+    domain: 'Ports & Waterways',
+    layerCount: 61,
+    keywords: ['port', 'waterway', 'jetty', 'coastal'],
+    sampleLayers: ['Major ports', 'Sagarmala projects', 'National waterways'],
+  },
+  {
+    id: 'GS-MOCA-AIR',
+    ministry: 'MoCA',
+    domain: 'Airports & UDAN',
+    layerCount: 58,
+    keywords: ['airport', 'udan', 'airstrip'],
+    sampleLayers: ['Operational airports', 'UDAN routes', 'Greenfield sites'],
+  },
+  {
+    id: 'GS-MOEFCC-ENV',
+    ministry: 'MoEFCC',
+    domain: 'Forest & Eco-Sensitive Zones',
+    layerCount: 54,
+    keywords: ['forest', 'esz', 'wildlife', 'clearance'],
+    sampleLayers: ['Forest cover', 'ESZ buffers', 'Wildlife corridors'],
+  },
+  {
+    id: 'GS-BRO-BORDER',
+    ministry: 'BRO',
+    domain: 'Border Roads & Strategic Grid',
+    layerCount: 51,
+    keywords: ['bro', 'border', 'strategic', 'hill'],
+    sampleLayers: ['BRO road network', 'Border outposts access', 'Avalanche zones'],
+  },
+  {
+    id: 'GS-SOI-CADASTRE',
+    ministry: 'Survey of India',
+    domain: 'Cadastral & Topographic',
+    layerCount: 48,
+    keywords: ['cadastral', 'survey', 'parcel', 'topo'],
+    sampleLayers: ['Village cadastral sheets', '1:50k toposheets', 'Control points'],
+  },
+  {
+    id: 'GS-MOAGRI-AGRI',
+    ministry: 'MoA&FW',
+    domain: 'Agri Infrastructure',
+    layerCount: 45,
+    keywords: ['mandi', 'cold chain', 'warehouse', 'pmksy'],
+    sampleLayers: ['APMC mandis', 'Cold storage nodes', 'PMKSY micro-irrigation'],
+  },
+  {
+    id: 'GS-MOHFW-HEALTH',
+    ministry: 'MoHFW',
+    domain: 'Health Facilities',
+    layerCount: 42,
+    keywords: ['hospital', 'phc', 'chc', 'ayushman'],
+    sampleLayers: ['Sub-centres', 'CHC/PHC locations', 'PM-ABHIM projects'],
+  },
+  {
+    id: 'GS-MOEDU-SCHOOL',
+    ministry: 'MoE',
+    domain: 'Schools & Skill Centres',
+    layerCount: 39,
+    keywords: ['school', 'iti', 'college', 'samagra'],
+    sampleLayers: ['Samagra Shiksha blocks', 'ITI clusters', 'Hostel gaps'],
+  },
+  {
+    id: 'GS-MOPR-POST',
+    ministry: 'MoPR',
+    domain: 'Panchayat & LGD Boundaries',
+    layerCount: 36,
+    keywords: ['lgd', 'panchayat', 'block', 'village'],
+    sampleLayers: ['Gram panchayat boundaries', 'Block HQ', 'LGD village points'],
+  },
+  {
+    id: 'GS-MOHA-DISASTER',
+    ministry: 'NDMA / MoHUA',
+    domain: 'Hazard & Flood Inundation',
+    layerCount: 34,
+    keywords: ['flood', 'landslide', 'cyclone', 'hazard'],
+    sampleLayers: ['River flood plains', 'Landslide susceptibility', 'Cyclone shelters'],
+  },
+  {
+    id: 'GS-MNRE-RE',
+    ministry: 'MNRE',
+    domain: 'Renewable Energy',
+    layerCount: 32,
+    keywords: ['solar', 'wind', 'hybrid', 'green hydrogen'],
+    sampleLayers: ['Solar parks', 'Wind corridors', 'RE evacuation lines'],
+  },
+  {
+    id: 'GS-MOCM-COAL',
+    ministry: 'Ministry of Coal',
+    domain: 'Coal & Mining Logistics',
+    layerCount: 30,
+    keywords: ['coal', 'mine', 'rail siding'],
+    sampleLayers: ['Coal blocks', 'Rail sidings', ' Washery locations'],
+  },
+  {
+    id: 'GS-DPIIT-IND',
+    ministry: 'DPIIT',
+    domain: 'Industrial Corridors & Nodes',
+    layerCount: 28,
+    keywords: ['dmic', 'nicd', 'plug and play', 'industrial'],
+    sampleLayers: ['DMIC nodes', 'Textile parks', 'Bulk drug parks'],
+  },
+  {
+    id: 'GS-MORTH-STATE-PWD',
+    ministry: 'State PWD (aggregated)',
+    domain: 'State Highway & District Roads',
+    layerCount: 26,
+    keywords: ['sh', 'mdr', 'pwd', 'state road'],
+    sampleLayers: ['State highway network', 'MDR inventory', 'Bridge condition index'],
+  },
+  {
+    id: 'GS-MORTH-URBAN-RD',
+    ministry: 'MoHUA / States',
+    domain: 'Urban Road & Drainage',
+    layerCount: 24,
+    keywords: ['drain', 'nala', 'municipal', 'pothole'],
+    sampleLayers: ['Municipal drains', 'Storm water networks', 'Ward road segments'],
+  },
+  {
+    id: 'GS-MOJS-GW',
+    ministry: 'CGWB / Jal Shakti',
+    domain: 'Groundwater & Aquifers',
+    layerCount: 22,
+    keywords: ['groundwater', 'aquifer', 'borewell'],
+    sampleLayers: ['Critical blocks', 'Aquifer maps', 'Recharge structures'],
+  },
+  {
+    id: 'GS-MOE-PETRO',
+    ministry: 'MoPNG / States',
+    domain: 'Retail Fuel & Storage',
+    layerCount: 20,
+    keywords: ['petrol', 'depot', 'retail outlet'],
+    sampleLayers: ['OMC depots', 'Retail outlets', 'LPG distributor points'],
+  },
+  {
+    id: 'GS-MOF-LOGISTICS',
+    ministry: 'MoF / Logistics Division',
+    domain: 'Multimodal Logistics Parks',
+    layerCount: 18,
+    keywords: ['mlp', 'warehouse', 'freight', 'logistics'],
+    sampleLayers: ['MLP sites', 'Freight villages', 'Cold chain hubs'],
+  },
+  {
+    id: 'GS-NITI-ASPIRATIONAL',
+    ministry: 'NITI Aayog',
+    domain: 'Aspirational Districts & MPI',
+    layerCount: 16,
+    keywords: ['aspirational', 'mpi', 'equity', 'deficit'],
+    sampleLayers: ['Aspirational district boundaries', 'MPI deciles', 'Health-education gaps'],
+  },
+  {
+    id: 'GS-MOSPI-CENSUS',
+    ministry: 'MoSPI',
+    domain: 'Demography & Habitation',
+    layerCount: 14,
+    keywords: ['census', 'population', 'habitation', 'sc st'],
+    sampleLayers: ['Census towns', 'SC/ST habitation clusters', 'Worker migration flows'],
+  },
+];
+
+export const GATISHAKTI_NMMP_TOTAL_LAYERS = GATI_SHAKTI_LAYER_GROUPS.reduce(
+  (sum, group) => sum + group.layerCount,
+  0
+);
+
+export const GATISHAKTI_NMMP_MINISTRY_COUNT = new Set(
+  GATI_SHAKTI_LAYER_GROUPS.map((g) => g.ministry)
+).size;
