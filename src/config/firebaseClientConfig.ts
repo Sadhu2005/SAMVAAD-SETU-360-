@@ -28,11 +28,17 @@ function env(name: string): string | undefined {
   return undefined;
 }
 
+function normalizeDatabaseId(raw?: string): string | undefined {
+  const id = raw?.trim();
+  if (!id || id === '(default)') return undefined;
+  return id;
+}
+
 export function readFirebaseClientConfig(): FirebaseClientConfig | null {
   const apiKey = env('VITE_FIREBASE_API_KEY');
   const projectId = env('VITE_FIREBASE_PROJECT_ID');
 
-  if (!apiKey || !projectId) {
+  if (!apiKey || !projectId || apiKey === 'demo-key') {
     return null;
   }
 
@@ -44,10 +50,14 @@ export function readFirebaseClientConfig(): FirebaseClientConfig | null {
     messagingSenderId: env('VITE_FIREBASE_MESSAGING_SENDER_ID') || '',
     appId: env('VITE_FIREBASE_APP_ID') || '',
     measurementId: env('VITE_FIREBASE_MEASUREMENT_ID') || undefined,
-    firestoreDatabaseId: env('VITE_FIREBASE_FIRESTORE_DATABASE_ID') || undefined,
+    firestoreDatabaseId: normalizeDatabaseId(env('VITE_FIREBASE_FIRESTORE_DATABASE_ID')),
   };
 }
 
 export function isFirebaseConfigured(): boolean {
   return readFirebaseClientConfig() !== null;
+}
+
+export function getFirebaseClientConfig(): FirebaseClientConfig | null {
+  return readFirebaseClientConfig();
 }

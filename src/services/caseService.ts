@@ -4,12 +4,7 @@ import {
   setDoc,
   getDoc,
   getDocs,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
   updateDoc,
-  serverTimestamp,
   addDoc
 } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from './firebase';
@@ -117,6 +112,15 @@ export function generateDpdpToken(contact: string): { maskedContact: string; dpd
   }
   const dpdpToken = `0x${Math.abs(hash).toString(16).padStart(8, '0')}...${last4}`;
   return { maskedContact, dpdpToken, last4 };
+}
+
+// Timeout helper for non-blocking Firestore fallback
+async function withTimeout<T>(promise: Promise<T>, ms = 4000): Promise<T> {
+  let timer: any;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Firestore operation timeout')), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 // Local mock store for test environments or offline connectivity
@@ -265,14 +269,13 @@ export async function submitCitizenCase(params: {
     stateIsoCode: geo.state.isoCode,
   };
 
-  // 1. Try Firebase Firestore
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
     const caseDocRef = doc(db!, 'cases', trackingId);
-    await setDoc(caseDocRef, omitUndefined(newCase));
+    await withTimeout(setDoc(caseDocRef, omitUndefined(newCase)));
 
     const auditRef = collection(db!, 'cases', trackingId, 'audit_logs');
-    await addDoc(auditRef, {
+    await withTimeout(addDoc(auditRef, {
       caseId: trackingId,
       timestamp: now,
       actor: maskedContact,
@@ -280,7 +283,7 @@ export async function submitCitizenCase(params: {
       action: 'Case Ingested',
       details: `Citizen filed infrastructure request under category ${params.category} via ${newCase.channel}.`,
       newStatus: 'submitted',
-    });
+    }));
   } catch (err) {
     console.warn('Firestore write fallback to local storage:', err);
   }
@@ -370,14 +373,13 @@ export async function getCaseByTrackingId(trackingId: string): Promise<{
 }> {
   const cleanId = trackingId.trim().toUpperCase();
 
-  // 1. Try Firestore
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
     const caseDocRef = doc(db!, 'cases', cleanId);
-    const snap = await getDoc(caseDocRef);
+    const snap = await withTimeout(getDoc(caseDocRef));
     if (snap.exists()) {
       const caseData = snap.data() as CitizenCase;
-      const logsSnap = await getDocs(collection(db!, 'cases', cleanId, 'audit_logs'));
+      const logsSnap = await withTimeout(getDocs(collection(db!, 'cases', cleanId, 'audit_logs')));
       const auditLogs: AuditLogEntry[] = [];
       logsSnap.forEach(d => auditLogs.push(d.data() as AuditLogEntry));
       auditLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
@@ -399,7 +401,7 @@ export async function getCaseByTrackingId(trackingId: string): Promise<{
 export async function getAllCases(): Promise<CitizenCase[]> {
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
-    const snap = await getDocs(collection(db!, 'cases'));
+    const snap = await withTimeout(getDocs(collection(db!, 'cases')));
     if (!snap.empty) {
       const list: CitizenCase[] = [];
       snap.forEach(d => list.push(d.data() as CitizenCase));
@@ -457,12 +459,11 @@ export async function updateCaseByOfficer(params: {
   if (params.closeOverrideReason) caseData.closeOverrideReason = params.closeOverrideReason;
   if (params.status === 'rejected') caseData.rejectedReason = params.remarks;
 
-  // 1. Try Firestore
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
     const caseDocRef = doc(db!, 'cases', params.trackingId);
-    await updateDoc(caseDocRef, omitUndefined({ ...caseData }));
-    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
+    await withTimeout(updateDoc(caseDocRef, omitUndefined({ ...caseData })));
+    await withTimeout(addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
       caseId: params.trackingId,
       timestamp: now,
       actor: params.officerName,
@@ -471,7 +472,7 @@ export async function updateCaseByOfficer(params: {
       details: params.remarks,
       previousStatus: prevStatus,
       newStatus: params.status,
-    });
+    }));
   } catch (err) {
     console.warn('Firestore update fallback to local store:', err);
   }
@@ -527,8 +528,8 @@ export async function citizenVerifyResolution(params: {
   try {
     if (!canUseFirestore()) throw new Error('Firestore not configured');
     const caseDocRef = doc(db!, 'cases', params.trackingId);
-    await updateDoc(caseDocRef, omitUndefined({ ...caseData }));
-    await addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
+    await withTimeout(updateDoc(caseDocRef, omitUndefined({ ...caseData })));
+    await withTimeout(addDoc(collection(db!, 'cases', params.trackingId, 'audit_logs'), {
       caseId: params.trackingId,
       timestamp: now,
       actor: caseData.citizenPhoneMasked,
@@ -536,7 +537,7 @@ export async function citizenVerifyResolution(params: {
       action: params.verified ? 'Citizen Verified Resolution' : 'Citizen Contested Resolution',
       details: detailsText,
       newStatus,
-    });
+    }));
   } catch (err) {
     console.warn('Firestore citizen verification fallback to local store:', err);
   }

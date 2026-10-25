@@ -8,11 +8,16 @@ let db: Firestore | undefined;
 let storage: FirebaseStorage | undefined;
 
 if (isFirebaseConfigured()) {
-  const config = readFirebaseClientConfig()!;
-  const { firestoreDatabaseId, ...firebaseAppConfig } = config;
-  app = getApps().length > 0 ? getApp() : initializeApp(firebaseAppConfig);
-  db = firestoreDatabaseId ? getFirestore(app, firestoreDatabaseId) : getFirestore(app);
-  storage = getStorage(app);
+  try {
+    const config = readFirebaseClientConfig()!;
+    const { firestoreDatabaseId, ...firebaseAppConfig } = config;
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseAppConfig);
+    const dbId = firestoreDatabaseId?.trim();
+    db = dbId && dbId !== '(default)' ? getFirestore(app, dbId) : getFirestore(app);
+    storage = getStorage(app);
+  } catch (err) {
+    console.warn('Failed to initialize Firebase app:', err);
+  }
 } else {
   const isDev =
     (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') ||
