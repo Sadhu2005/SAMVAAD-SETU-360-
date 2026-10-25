@@ -4,15 +4,10 @@ import {
   setDoc,
   getDoc,
   getDocs,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
   updateDoc,
-  serverTimestamp,
   addDoc
 } from 'firebase/firestore';
-import { db } from './firebase';
+import { db, isFirebaseConfigured } from './firebase';
 
 export type CaseStatus =
   | 'submitted'
@@ -104,6 +99,15 @@ export function generateDpdpToken(contact: string): { maskedContact: string; dpd
   }
   const dpdpToken = `0x${Math.abs(hash).toString(16).padStart(8, '0')}...${last4}`;
   return { maskedContact, dpdpToken };
+}
+
+// Timeout helper for non-blocking Firestore fallback
+async function withTimeout<T>(promise: Promise<T>, ms = 800): Promise<T> {
+  let timer: any;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new Error('Firestore operation timeout')), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 // Local mock store for test environments or offline connectivity
@@ -215,23 +219,25 @@ export async function submitCitizenCase(params: {
     updatedAt: now,
   };
 
-  // 1. Try Firebase Firestore
-  try {
-    const caseDocRef = doc(db, 'cases', trackingId);
-    await setDoc(caseDocRef, newCase);
+  // 1. Try Firebase Firestore if configured
+  if (db && isFirebaseConfigured) {
+    try {
+      const caseDocRef = doc(db, 'cases', trackingId);
+      await withTimeout(setDoc(caseDocRef, newCase));
 
-    const auditRef = collection(db, 'cases', trackingId, 'audit_logs');
-    await addDoc(auditRef, {
-      caseId: trackingId,
-      timestamp: now,
-      actor: maskedContact,
-      role: 'citizen',
-      action: 'Case Ingested',
-      details: `Citizen filed infrastructure request under category ${params.category} via ${newCase.channel}.`,
-      newStatus: 'submitted',
-    });
-  } catch (err) {
-    console.warn('Firestore write fallback to local storage:', err);
+      const auditRef = collection(db, 'cases', trackingId, 'audit_logs');
+      await withTimeout(addDoc(auditRef, {
+        caseId: trackingId,
+        timestamp: now,
+        actor: maskedContact,
+        role: 'citizen',
+        action: 'Case Ingested',
+        details: `Citizen filed infrastructure request under category ${params.category} via ${newCase.channel}.`,
+        newStatus: 'submitted',
+      }));
+    } catch (err) {
+      console.warn('Firestore write fallback to local storage:', err);
+    }
   }
 
   // Always sync to local store
@@ -260,20 +266,22 @@ export async function getCaseByTrackingId(trackingId: string): Promise<{
 }> {
   const cleanId = trackingId.trim().toUpperCase();
 
-  // 1. Try Firestore
-  try {
-    const caseDocRef = doc(db, 'cases', cleanId);
-    const snap = await getDoc(caseDocRef);
-    if (snap.exists()) {
-      const caseData = snap.data() as CitizenCase;
-      const logsSnap = await getDocs(collection(db, 'cases', cleanId, 'audit_logs'));
-      const auditLogs: AuditLogEntry[] = [];
-      logsSnap.forEach(d => auditLogs.push(d.data() as AuditLogEntry));
-      auditLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-      return { caseData, auditLogs };
+  // 1. Try Firestore if configured
+  if (db && isFirebaseConfigured) {
+    try {
+      const caseDocRef = doc(db, 'cases', cleanId);
+      const snap = await withTimeout(getDoc(caseDocRef));
+      if (snap.exists()) {
+        const caseData = snap.data() as CitizenCase;
+        const logsSnap = await withTimeout(getDocs(collection(db, 'cases', cleanId, 'audit_logs')));
+        const auditLogs: AuditLogEntry[] = [];
+        logsSnap.forEach(d => auditLogs.push(d.data() as AuditLogEntry));
+        auditLogs.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        return { caseData, auditLogs };
+      }
+    } catch (err) {
+      console.warn('Firestore read fallback to local storage:', err);
     }
-  } catch (err) {
-    console.warn('Firestore read fallback to local storage:', err);
   }
 
   // 2. Local fallback
@@ -286,16 +294,18 @@ export async function getCaseByTrackingId(trackingId: string): Promise<{
  * Get all cases (for government dashboard)
  */
 export async function getAllCases(): Promise<CitizenCase[]> {
-  try {
-    const snap = await getDocs(collection(db, 'cases'));
-    if (!snap.empty) {
-      const list: CitizenCase[] = [];
-      snap.forEach(d => list.push(d.data() as CitizenCase));
-      list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      return list;
+  if (db && isFirebaseConfigured) {
+    try {
+      const snap = await withTimeout(getDocs(collection(db, 'cases')));
+      if (!snap.empty) {
+        const list: CitizenCase[] = [];
+        snap.forEach(d => list.push(d.data() as CitizenCase));
+        list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        return list;
+      }
+    } catch (err) {
+      console.warn('Firestore getAllCases fallback to local cache:', err);
     }
-  } catch (err) {
-    console.warn('Firestore getAllCases fallback to local cache:', err);
   }
 
   return Array.from(localCasesMap.values()).sort(
@@ -330,22 +340,24 @@ export async function updateCaseByOfficer(params: {
   if (params.officerPhone) caseData.officerPhone = params.officerPhone;
   if (params.completionProof) caseData.completionProof = params.completionProof;
 
-  // 1. Try Firestore
-  try {
-    const caseDocRef = doc(db, 'cases', params.trackingId);
-    await updateDoc(caseDocRef, { ...caseData });
-    await addDoc(collection(db, 'cases', params.trackingId, 'audit_logs'), {
-      caseId: params.trackingId,
-      timestamp: now,
-      actor: params.officerName,
-      role: params.officerRole,
-      action: `Status updated to ${params.status}`,
-      details: params.remarks,
-      previousStatus: prevStatus,
-      newStatus: params.status,
-    });
-  } catch (err) {
-    console.warn('Firestore update fallback to local store:', err);
+  // 1. Try Firestore if configured
+  if (db && isFirebaseConfigured) {
+    try {
+      const caseDocRef = doc(db, 'cases', params.trackingId);
+      await withTimeout(updateDoc(caseDocRef, { ...caseData }));
+      await withTimeout(addDoc(collection(db, 'cases', params.trackingId, 'audit_logs'), {
+        caseId: params.trackingId,
+        timestamp: now,
+        actor: params.officerName,
+        role: params.officerRole,
+        action: `Status updated to ${params.status}`,
+        details: params.remarks,
+        previousStatus: prevStatus,
+        newStatus: params.status,
+      }));
+    } catch (err) {
+      console.warn('Firestore update fallback to local store:', err);
+    }
   }
 
   // 2. Sync local store
@@ -392,20 +404,22 @@ export async function citizenVerifyResolution(params: {
 
   const detailsText = caseData.citizenFeedback.feedbackText || (params.verified ? 'Citizen verified on-ground completion.' : 'Citizen reported issue persists.');
 
-  try {
-    const caseDocRef = doc(db, 'cases', params.trackingId);
-    await updateDoc(caseDocRef, { ...caseData });
-    await addDoc(collection(db, 'cases', params.trackingId, 'audit_logs'), {
-      caseId: params.trackingId,
-      timestamp: now,
-      actor: caseData.citizenPhoneMasked,
-      role: 'citizen',
-      action: params.verified ? 'Citizen Verified Resolution' : 'Citizen Contested Resolution',
-      details: detailsText,
-      newStatus,
-    });
-  } catch (err) {
-    console.warn('Firestore citizen verification fallback to local store:', err);
+  if (db && isFirebaseConfigured) {
+    try {
+      const caseDocRef = doc(db, 'cases', params.trackingId);
+      await withTimeout(updateDoc(caseDocRef, { ...caseData }));
+      await withTimeout(addDoc(collection(db, 'cases', params.trackingId, 'audit_logs'), {
+        caseId: params.trackingId,
+        timestamp: now,
+        actor: caseData.citizenPhoneMasked,
+        role: 'citizen',
+        action: params.verified ? 'Citizen Verified Resolution' : 'Citizen Contested Resolution',
+        details: detailsText,
+        newStatus,
+      }));
+    } catch (err) {
+      console.warn('Firestore citizen verification fallback to local store:', err);
+    }
   }
 
   localCasesMap.set(params.trackingId, caseData);

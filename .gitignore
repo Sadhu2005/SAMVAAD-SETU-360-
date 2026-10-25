@@ -24,6 +24,7 @@ blob-report/
 .env.test.local
 .env.production.local
 !.env.example
+firebase-applet-config.json
 
 # Logs
 logs/

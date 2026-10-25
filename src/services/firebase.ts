@@ -1,12 +1,28 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import { getFirebaseClientConfig } from '../config/firebaseClientConfig';
 
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+const config = getFirebaseClientConfig();
 
-// Use specified database ID if present, otherwise default
-export const db: Firestore = firebaseConfig.firestoreDatabaseId
-  ? getFirestore(app, firebaseConfig.firestoreDatabaseId)
-  : getFirestore(app);
+// Valid configuration requires a real API key and project ID (not fallback placeholders)
+export const isFirebaseConfigured = Boolean(
+  config.apiKey &&
+  config.projectId &&
+  config.apiKey !== 'demo-key'
+);
 
-export default app;
+let dbInstance: Firestore | null = null;
+
+if (isFirebaseConfigured) {
+  try {
+    const app = getApps().length > 0 ? getApp() : initializeApp(config as any);
+    dbInstance = config.firestoreDatabaseId
+      ? getFirestore(app, config.firestoreDatabaseId)
+      : getFirestore(app);
+  } catch (e) {
+    console.warn('Failed to initialize Firebase app:', e);
+  }
+}
+
+export const db: Firestore | null = dbInstance;
+export default db;
