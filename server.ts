@@ -2,6 +2,7 @@ import 'dotenv/config';
 
 import express, { Request, Response } from 'express';
 import http from 'http';
+import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import {
@@ -43,10 +44,38 @@ import { getDistrictsFromStore, getStatesFromStore } from './src/services/geoSer
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+function resolvePort(): number {
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    const parsed = Number(process.argv[portArgIndex + 1]);
+    if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  }
+  if (process.env.APP_PORT) {
+    const parsed = Number(process.env.APP_PORT);
+    if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  }
+  // In Cloud Run multi-container architectures, PORT=8080 is passed for the ingress proxy container (nginx-container).
+  // The backend app-container must listen on internal port 3000 where nginx reverse-proxies requests.
+  if (process.env.PORT && process.env.PORT !== '8080') {
+    const parsed = Number(process.env.PORT);
+    if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  }
+  return 3000;
+}
+
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = resolvePort();
 
 app.use(express.json({ limit: '10mb' }));
+
+// Root-level health check probes for Cloud Run, Kubernetes, and reverse-proxy probes
+app.get(['/health', '/healthz', '/_health'], (_req: Request, res: Response) => {
+  res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    port: PORT,
+  });
+});
 
 // Version 1 API Router
 const v1Router = express.Router();
@@ -830,8 +859,10 @@ app.use('/api', v1Router);
 async function startServer() {
   const httpServer = http.createServer(app);
   const disableHmr = process.env.DISABLE_HMR === 'true';
+  const distIndexPath = path.resolve(__dirname, 'dist', 'index.html');
+  const hasBuiltDist = fs.existsSync(distIndexPath);
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (process.env.NODE_ENV !== 'production' && !hasBuiltDist) {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
       server: {
@@ -845,14 +876,51 @@ async function startServer() {
   } else {
     app.use(express.static(path.resolve(__dirname, 'dist')));
     app.get('*', (_req, res) => {
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      if (fs.existsSync(distIndexPath)) {
+        res.sendFile(distIndexPath, (err) => {
+          if (err && !res.headersSent) {
+            console.error('Error sending dist index.html:', err);
+            res.status(500).send('Error loading application');
+          }
+        });
+      } else {
+        const rootIndex = path.resolve(__dirname, 'index.html');
+        if (fs.existsSync(rootIndex)) {
+          res.sendFile(rootIndex);
+        } else {
+          res.status(200).send('<!DOCTYPE html><html><body><h1>SamvaadSetu 360</h1><p>Starting up...</p></body></html>');
+        }
+      }
     });
   }
 
-  httpServer.listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  httpServer.listen(PORT, '0.0.0.0', () => {
+    console.log(`Server running on http://0.0.0.0:${PORT}`);
   });
+
+  const handleShutdown = (signal: string) => {
+    console.log(`Received ${signal}, closing HTTP server gracefully...`);
+    httpServer.close(() => {
+      console.log('HTTP server closed cleanly.');
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.warn('Forcing server process exit after shutdown timeout.');
+      process.exit(0);
+    }, 5000);
+  };
+
+  process.on('SIGTERM', () => handleShutdown('SIGTERM'));
+  process.on('SIGINT', () => handleShutdown('SIGINT'));
 }
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
 
 function isDirectRun(): boolean {
   const entry = process.argv[1];
