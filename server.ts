@@ -37,6 +37,7 @@ import {
   generateGeminiJson,
   generateGeminiText,
   isGeminiReady,
+  testGeminiConnection,
 } from './src/services/geminiClient';
 import { last4Matches, maskCaseForPublic } from './src/utils/ticketLogic';
 import { getDistrictsFromStore, getStatesFromStore } from './src/services/geoService';
@@ -166,8 +167,13 @@ v1Router.get('/health', (_req: Request, res: Response) => {
     gatiShaktiCatalogLayers: getGatiShaktiCatalogSummary().totalLayers,
     gatiShaktiLiveGis: isGatiShaktiLiveConfigured(),
     nitiIndicesBundled: getNitiIndicesSummary().bundledDistricts,
-    platform: 'SamvaadSetu 360 DPI Engine'
+    platform: 'SamvaadSetu 360 DPI Engine',
   });
+});
+
+v1Router.get('/gemini/status', async (_req: Request, res: Response) => {
+  const status = await testGeminiConnection();
+  res.json({ success: status.ready, ...status });
 });
 
 v1Router.get('/niti/indices/summary', (_req: Request, res: Response) => {
